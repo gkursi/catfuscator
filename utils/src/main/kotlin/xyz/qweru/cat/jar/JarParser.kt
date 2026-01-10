@@ -5,6 +5,7 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
 import xyz.qweru.cat.config.Configuration
+import xyz.qweru.cat.profile.Timer
 import xyz.qweru.cat.thread.Threads
 import java.io.File
 import java.io.FileOutputStream
@@ -18,13 +19,12 @@ object JarParser {
     private val logger = KotlinLogging.logger {}
 
     fun read(config: Configuration) = JarFile(config.input).use { jar ->
+        val timer = Timer()
         val classOpts = if (config.strip) 2 else 0
         val container = JarContainer()
         val parallel = Threads.optional(config.threadAsm)
             { fromCount(jar.size(), config.threadAsmCapacity) }
             .createInvocator()
-
-        val start = System.nanoTime()
 
         for (entry in jar.entries()) {
             if (entry.isDirectory) continue
@@ -34,15 +34,14 @@ object JarParser {
                 }
 
                 if (entry.name.endsWith(".class")) {
-                    val start = System.nanoTime()
+                    val timer = Timer()
                     val output = ClassNode()
                     val reader = ClassReader(bytes)
 
                     reader.accept(output, classOpts)
                     container.put(output)
 
-                    val time = System.nanoTime() - start
-                    logger.info { "Processed class file: ${entry.name} (took ${time / 1_000_000}ms)" }
+                    logger.info { "Processed class file: ${entry.name} (took ${timer.time()}ms)" }
                 } else {
                     container.put(Resource(entry.name, bytes))
                     logger.info { "Processed resource:   ${entry.name}" }
@@ -51,8 +50,7 @@ object JarParser {
         }
 
         parallel.await()
-        val end = System.nanoTime() - start
-        logger.info { "Jar parsing took ${end / 1_000_000}ms" }
+        logger.info { "Jar parsing took ${timer.time()}ms" }
 
         return@use container
     }
@@ -63,18 +61,17 @@ object JarParser {
             { fromCount(container.size(), config.threadAsmCapacity) }
             .createInvocator()
 
-        val start = System.nanoTime()
+        val timer = Timer()
 
         for (node in container.classes) {
             parallel {
-                val start = System.nanoTime()
+                val timer = Timer()
                 val writer = ClassWriter(0)
 
                 node.accept(writer)
                 bytes["${node.name}.class"] = writer.toByteArray()
 
-                val time = System.nanoTime() - start
-                logger.info { "Processed class file: ${node.name} (took ${time / 1_000_000}ms)" }
+                logger.info { "Processed class file: ${node.name} (took ${timer.time()}ms)" }
             }
         }
 
@@ -83,8 +80,7 @@ object JarParser {
         }
 
         parallel.await()
-        val end = System.nanoTime() - start
-        logger.info { "Jar writing took ${end / 1_000_000}ms" }
+        logger.info { "Jar writing took ${timer.time()}ms" }
 
         val file = File(config.output)
         JarOutputStream(FileOutputStream(file)).use { stream ->
