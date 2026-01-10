@@ -1,0 +1,31 @@
+[versions]
+kotlin = "2.2.20"
+kotlinxDatetime = "0.6.2"
+kotlinxSerializationJSON = "1.8.1"
+kotlinxCoroutines = "1.10.2"
+asm = "9.9.1"
+clikt = "5.0.3"
+logging = "7.0.3"
+slf4j = "2.0.17"
+logback = "1.4.14"
+
+[libraries]
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
+kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+asm = { module = "org.ow2.asm:asm", version.ref = "asm"}
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "logging" }
+slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j"}
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback"}
+
+# Libraries can be bundled together for easier import
+[bundles]
+kotlinxEcosystem = ["kotlinxDatetime", "kotlinxSerialization", "kotlinxCoroutines"]
+project = ["asm", "asm-tree", "clikt"]
+logging = ["logging", "slf4j", "logback"]
+
+[plugins]
+kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

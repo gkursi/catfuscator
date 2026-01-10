@@ -1,0 +1,9 @@
+# Default ignored files
+.idea/
+.gradle/
+.kotlin/
+build/
+/shelf/
+/workspace.xml
+
+output.jar
