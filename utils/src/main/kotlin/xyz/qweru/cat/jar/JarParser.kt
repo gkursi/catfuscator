@@ -13,14 +13,13 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 object JarParser {
     private val logger = KotlinLogging.logger {}
 
     fun read(config: Configuration) = JarFile(config.input).use { jar ->
         val timer = Timer()
-        val classOpts = if (config.strip) 2 else 0
+        val classOpts = ClassReader.SKIP_FRAMES or if (config.strip) 2 else 0
         val container = JarContainer()
         val parallel = Threads.optional(config.threadAsm)
             { fromCount(jar.size(), config.threadAsmCapacity) }
@@ -55,7 +54,7 @@ object JarParser {
         return@use container
     }
 
-    fun write(config: Configuration, container: JarContainer) {
+    fun write(container: JarContainer, config: Configuration) {
         val bytes = ConcurrentHashMap<String, ByteArray>()
         val parallel = Threads.optional(config.threadAsm)
             { fromCount(container.size(), config.threadAsmCapacity) }
@@ -63,10 +62,11 @@ object JarParser {
 
         val timer = Timer()
 
-        for (node in container.classes) {
+        for (entry in container.classes) {
             parallel {
+                val node = entry.value
                 val timer = Timer()
-                val writer = ClassWriter(0)
+                val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES)
 
                 node.accept(writer)
                 bytes["${node.name}.class"] = writer.toByteArray()
@@ -85,17 +85,11 @@ object JarParser {
         val file = File(config.output)
         JarOutputStream(FileOutputStream(file)).use { stream ->
             for (entry in bytes.entries) {
-                writeToZip(stream, entry.key, entry.value)
+                stream.putNextEntry(ZipEntry(entry.key))
+                stream.write(entry.value)
+                stream.closeEntry()
             }
         }
         logger.info { "Wrote to ${file.absolutePath}" }
     }
-
-    private fun writeToZip(stream: ZipOutputStream, name: String, bytes: ByteArray) {
-        val entry = ZipEntry(name)
-        stream.putNextEntry(entry)
-        stream.write(bytes)
-        stream.closeEntry()
-    }
-
 }

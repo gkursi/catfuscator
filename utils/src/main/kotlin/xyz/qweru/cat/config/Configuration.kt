@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.options.validate
+import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
 
@@ -36,6 +37,32 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
             require(!noOverwrite || !File(it).exists()) { "The provided path already exists" }
         }
 
+
+    /* Remapping options */
+
+    val remapManifest by option(
+        "--remap-metadata",
+        help = "Remap jar metadata"
+    )
+        .boolean()
+        .default(true)
+
+    val threadRemap by option(
+        "--thread-remap",
+        help = "Enable/disable multithreading for remapping"
+    )
+        .boolean()
+        .default(true)
+
+    val threadRemapCapacity by option(
+        "--thread-remap-capacity",
+        help = "Tasks per thread for remapping"
+    )
+        .int()
+        .default(20)
+
+    /* ASM parsing options */
+
     val strip by option(
         "--strip",
         help = "Strip source debug elements"
@@ -44,7 +71,7 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
 
     val threadAsm by option(
         "--thread-asm",
-        help = "Multithread ASM, generally not recommended"
+        help = "Multithread ASM parsing and bytecode generation, generally not recommended"
     )
         .flag()
 

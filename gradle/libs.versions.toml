@@ -16,6 +16,7 @@ kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-j
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 asm = { module = "org.ow2.asm:asm", version.ref = "asm"}
 asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "logging" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j"}
@@ -24,7 +25,7 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback"}
 # Libraries can be bundled together for easier import
 [bundles]
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxSerialization", "kotlinxCoroutines"]
-project = ["asm", "asm-tree", "clikt"]
+project = ["asm", "asm-tree", "asm-commons", "clikt"]
 logging = ["logging", "slf4j", "logback"]
 
 [plugins]

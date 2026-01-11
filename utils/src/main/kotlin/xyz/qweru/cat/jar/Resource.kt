@@ -1,6 +1,6 @@
 package xyz.qweru.cat.jar
 
-data class Resource(val name: String, val bytes: ByteArray) {
+data class Resource(val name: String, var bytes: ByteArray) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
