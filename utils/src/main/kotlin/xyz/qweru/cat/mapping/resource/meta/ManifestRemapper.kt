@@ -3,7 +3,7 @@ package xyz.qweru.cat.mapping.resource.meta
 import io.github.oshai.kotlinlogging.KotlinLogging
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.Resource
-import xyz.qweru.cat.mapping.MappingLookup
+import xyz.qweru.cat.mapping.lookup.MappingLookup
 import xyz.qweru.cat.mapping.resource.ResourceRemapper
 
 object ManifestRemapper : ResourceRemapper {
@@ -20,7 +20,7 @@ object ManifestRemapper : ResourceRemapper {
                 val mainClass = line
                     .substring(12)
                     .replace(".", "/")
-                val remapped = (mappings.getMapping(mainClass) ?: mainClass)
+                val remapped = (mappings.get(mainClass) ?: mainClass)
                     .replace("/", ".")
                 output.append("Main-Class: ").append(remapped)
                 logger.info { "Mapped Main-Class: $mainClass -> $remapped" }

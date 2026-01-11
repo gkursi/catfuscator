@@ -1,13 +1,13 @@
 package xyz.qweru.cat.jar
 
 import org.objectweb.asm.tree.ClassNode
-import xyz.qweru.cat.mapping.MappingLookup
+import xyz.qweru.cat.mapping.lookup.JarMappingLookup
 import java.util.concurrent.ConcurrentHashMap
 
 class JarContainer {
     val classes: MutableMap<String, ClassNode> = ConcurrentHashMap()
     val resources: MutableSet<Resource> = ConcurrentHashMap.newKeySet()
-    val mappings = MappingLookup("")
+    val mappings = JarMappingLookup()
 
     fun put(classNode: ClassNode) {
         classes[classNode.name] = classNode

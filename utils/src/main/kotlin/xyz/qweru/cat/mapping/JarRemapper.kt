@@ -3,8 +3,10 @@ package xyz.qweru.cat.mapping
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.MethodNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.mapping.klass.LocalFieldLookupRemapper
 import xyz.qweru.cat.mapping.klass.LookupRemapper
 import xyz.qweru.cat.mapping.resource.ResourceRemapper
 import xyz.qweru.cat.mapping.resource.meta.ManifestRemapper
@@ -25,9 +27,27 @@ object JarRemapper {
 
         for (entry in classes) {
             parallel {
+                val initial = entry.value
                 val result = ClassNode()
-                entry.value.accept(ClassRemapper(result, remapper))
+                initial.accept(ClassRemapper(result, remapper))
                 entry.setValue(result)
+
+                val methods = arrayListOf<MethodNode>()
+                for (i in 0..<result.methods.size) {
+                    val method = result.methods[i]
+                    val remappedNode = MethodNode()
+
+                    remappedNode.access = method.access
+                    remappedNode.name = method.name
+                    remappedNode.desc = method.desc
+                    remappedNode.signature = method.signature
+                    remappedNode.exceptions = method.exceptions
+
+                    method.accept(LocalFieldLookupRemapper(remapper, initial.name, initial.methods[i].name, remappedNode))
+                    methods.add(remappedNode)
+                }
+
+                result.methods = methods
             }
         }
 
