@@ -8,9 +8,9 @@ import kotlin.collections.iterator
 class MethodRenameTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("MethodRename", target, opts) {
-    private val prefix by value("Prefix", "\u1DE4:3__ Protected by catfuscator :3__")
-    private val excludeMain by value("Exclude Main", true)
+) : Transformer("MethodRename", "Rename methods", target, opts) {
+    private val prefix by value("Prefix", "Prefix for renamed methods", "\u0000:3__ Protected by catfuscator :3__")
+    private val excludeMain by value("Exclude Main", "Exclude any methods named `main` (required when used as runnable jar)", true)
 
     init {
         target.apply {

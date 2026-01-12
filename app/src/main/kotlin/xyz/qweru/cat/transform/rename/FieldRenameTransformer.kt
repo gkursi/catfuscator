@@ -8,8 +8,8 @@ import kotlin.collections.iterator
 class FieldRenameTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("MethodRename", target, opts) {
-    private val prefix by value("Prefix", "\u1DE4:3__ Protected by catfuscator :3__")
+) : Transformer("FieldRename", "Rename fields", target, opts) {
+    private val prefix by value("Prefix", "Prefix for renamed fields", "\u1DE4:3__ Protected by catfuscator :3__")
 
     init {
         target.apply {

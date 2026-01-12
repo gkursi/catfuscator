@@ -11,9 +11,8 @@ private val logger = KotlinLogging.logger {}
 class LocalFieldRenameTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("LocalFieldRename", target, opts) {
-    private val prefix by value("Prefix", "\u1DE4\u1DE4\u1DE4\u1DE4")
-//    private val excludeMain by value("Exclude Main ", true)
+) : Transformer("LocalFieldRename", "Rename local fields", target, opts) {
+    private val prefix by value("Prefix", "Prefix for renamed fields", "\u0000")
 
     init {
         target.apply {

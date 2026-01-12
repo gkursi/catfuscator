@@ -38,6 +38,22 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
         }
 
 
+    /* Transformer options */
+
+    val threadTransform by option(
+        "--thread-transform",
+        help = "Enable/disable multithreading for transforming classes"
+    )
+        .boolean()
+        .default(true)
+
+    val threadTransformCapacity by option(
+        "--thread-transform-capacity",
+        help = "Tasks per thread for transforming classes"
+    )
+        .int()
+        .default(5)
+
     /* Remapping options */
 
     val remapManifest by option(
