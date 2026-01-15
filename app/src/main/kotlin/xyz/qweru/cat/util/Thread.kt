@@ -6,4 +6,4 @@ import xyz.qweru.cat.thread.Threads
 fun createExecutorFrom(configuration: Configuration): Threads.ExecutorInvocator =
     Threads.optional(configuration.threadTransform)
         { fromCount(configuration.threadTransformCapacity) }
-        .createInvocator()
+        .createWrappedInvocator()

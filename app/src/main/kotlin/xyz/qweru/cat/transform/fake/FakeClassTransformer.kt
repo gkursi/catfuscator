@@ -38,9 +38,7 @@ class FakeClassTransformer(
                 val superCl = superClasses.random().replace('.', '/')
                 klass.visit(
                     version,
-                    Opcodes.ACC_PUBLIC
-                            or Opcodes.ACC_SYNTHETIC
-                            or Opcodes.ACC_BRIDGE,
+                    Opcodes.ACC_PUBLIC,
                     "$prefix$i",
                     "L$superCl;",
                     superCl,

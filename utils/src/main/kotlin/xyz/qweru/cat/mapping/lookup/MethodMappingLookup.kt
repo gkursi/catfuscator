@@ -26,10 +26,4 @@ class MethodMappingLookup : MappingLookup {
             methodNames[original]!!.name = new
         }
     }
-
-    fun dump() {
-        logger.warn { "${methodNames.entries.joinToString(",") {
-            "${it.key} -> ${it.value.name}"
-        }} (${methodNames.size} total)" }
-    }
 }

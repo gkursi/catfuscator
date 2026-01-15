@@ -68,4 +68,6 @@ class OptionalExecutorService(
     }
 
     fun createInvocator() = ExecutorInvocator(this)
+
+    fun createWrappedInvocator() = Threads.WrappedExecutorInvocator(this)
 }

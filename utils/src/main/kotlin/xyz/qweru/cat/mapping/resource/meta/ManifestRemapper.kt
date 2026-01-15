@@ -23,7 +23,6 @@ object ManifestRemapper : ResourceRemapper {
                 val remapped = (mappings.get(mainClass) ?: mainClass)
                     .replace("/", ".")
                 output.append("Main-Class: ").append(remapped)
-                logger.info { "Mapped Main-Class: $mainClass -> $remapped" }
             } else {
                 output.append(line)
             }

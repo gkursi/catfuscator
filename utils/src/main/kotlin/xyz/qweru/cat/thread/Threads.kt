@@ -13,7 +13,7 @@ object Threads {
         count.floorDiv(capacity).coerceAtLeast(1)
     )
 
-    class ExecutorInvocator(val executor: ExecutorService) : (() -> Unit) -> Unit {
+    open class ExecutorInvocator(val executor: ExecutorService) : (() -> Unit) -> Unit {
         override fun invoke(t: () -> Unit) {
             executor.submit(t)
         }
@@ -28,6 +28,19 @@ object Threads {
         fun await() {
             executor.shutdown()
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
+        }
+    }
+
+    class WrappedExecutorInvocator(executor: ExecutorService) : ExecutorInvocator(executor) {
+        override fun invoke(t: () -> Unit) {
+            super.invoke {
+                try {
+                    t()
+                } catch (e: Exception) {
+                    e.printStackTrace(System.err)
+                    throw e
+                }
+            }
         }
     }
 }

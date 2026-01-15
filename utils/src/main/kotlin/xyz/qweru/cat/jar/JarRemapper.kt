@@ -1,17 +1,17 @@
-package xyz.qweru.cat.mapping
+package xyz.qweru.cat.jar
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.MethodNode
 import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.mapping.klass.LocalFieldLookupRemapper
 import xyz.qweru.cat.mapping.klass.LookupRemapper
 import xyz.qweru.cat.mapping.resource.ResourceRemapper
 import xyz.qweru.cat.mapping.resource.meta.ManifestRemapper
 import xyz.qweru.cat.profile.Timer
 import xyz.qweru.cat.thread.Threads
+import kotlin.collections.iterator
 
 object JarRemapper {
     private val logger = KotlinLogging.logger {}
@@ -43,7 +43,14 @@ object JarRemapper {
                     remappedNode.signature = method.signature
                     remappedNode.exceptions = method.exceptions
 
-                    method.accept(LocalFieldLookupRemapper(remapper, initial.name, initial.methods[i].name, remappedNode))
+                    method.accept(
+                        LocalFieldLookupRemapper(
+                            remapper,
+                            initial.name,
+                            initial.methods[i].name,
+                            remappedNode
+                        )
+                    )
                     methods.add(remappedNode)
                 }
 

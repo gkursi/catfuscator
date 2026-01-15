@@ -52,7 +52,7 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
         help = "Tasks per thread for transforming classes"
     )
         .int()
-        .default(5)
+        .default(2)
 
     /* Remapping options */
 
@@ -75,7 +75,7 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
         help = "Tasks per thread for remapping"
     )
         .int()
-        .default(20)
+        .default(1)
 
     /* ASM parsing options */
 

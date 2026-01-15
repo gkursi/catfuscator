@@ -4,9 +4,11 @@ import com.github.ajalt.clikt.core.main
 import io.github.oshai.kotlinlogging.KotlinLogging
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarParser
-import xyz.qweru.cat.mapping.JarRemapper
+import xyz.qweru.cat.jar.JarRemapper
 import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
+import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
 import xyz.qweru.cat.transform.fake.FakeClassTransformer
+import xyz.qweru.cat.transform.fake.FakeMethodTransformer
 import xyz.qweru.cat.transform.rename.ClassRenameTransformer
 import xyz.qweru.cat.transform.rename.FieldRenameTransformer
 import xyz.qweru.cat.transform.rename.LocalFieldRenameTransformer
@@ -26,9 +28,15 @@ object Main {
 
         // apply transformers
         // todo: configurable transformers
-        FakeClassTransformer(jar, config)
-        SyntheticMethodTransformer(jar, config)
 
+        StringEncryptTransformer(jar, config)
+        FakeClassTransformer(jar, config)
+        FakeMethodTransformer(jar, config)
+
+        // transformers which transform existing classes/methods/etc.
+        // need to be run after others, otherwise they won't be applied
+        // to newly generated code
+//        SyntheticMethodTransformer(jar, config)
         ClassRenameTransformer(jar, config)
         MethodRenameTransformer(jar, config)
         FieldRenameTransformer(jar, config)

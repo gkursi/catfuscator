@@ -1,7 +1,6 @@
 package xyz.qweru.cat.transform.crash
 
 import org.objectweb.asm.Opcodes
-import org.objectweb.asm.tree.MethodNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer

@@ -18,8 +18,7 @@ class LocalFieldLookupRemapper(
         end: Label?,
         index: Int
     ) {
-        println("lvar $klass#$method..$name")
         super.visitLocalVariable(remapper.mapLocalFieldName(klass, method, name), descriptor, signature, start, end, index)
-//        super.visitLocalVariable(name, descriptor, signature, start, end, index)
     }
+
 }

@@ -33,17 +33,13 @@ object JarParser {
                 }
 
                 if (entry.name.endsWith(".class")) {
-                    val timer = Timer()
                     val output = ClassNode()
                     val reader = ClassReader(bytes)
 
                     reader.accept(output, classOpts)
                     container.put(output)
-
-                    logger.info { "Processed class file: ${entry.name} (took ${timer.time()}ms)" }
                 } else {
                     container.put(Resource(entry.name, bytes))
-                    logger.info { "Processed resource:   ${entry.name}" }
                 }
             }
         }
@@ -65,13 +61,11 @@ object JarParser {
         for (entry in container.classes) {
             parallel {
                 val node = entry.value
-                val timer = Timer()
                 val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES)
 
+                logger.info { "Computing ${node.name}" }
                 node.accept(writer)
                 bytes["${node.name}.class"] = writer.toByteArray()
-
-                logger.info { "Processed class file: ${node.name} (took ${timer.time()}ms)" }
             }
         }
 
