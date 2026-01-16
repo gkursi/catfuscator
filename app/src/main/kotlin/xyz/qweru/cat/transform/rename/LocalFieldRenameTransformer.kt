@@ -1,10 +1,9 @@
 package xyz.qweru.cat.transform.rename
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.createExecutorFrom
+import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.collections.iterator
 
 class LocalFieldRenameTransformer(

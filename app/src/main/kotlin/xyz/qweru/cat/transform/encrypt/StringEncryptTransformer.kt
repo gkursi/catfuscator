@@ -3,8 +3,6 @@ package xyz.qweru.cat.transform.encrypt
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
-import org.objectweb.asm.tree.AbstractInsnNode
-import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.InvokeDynamicInsnNode
 import org.objectweb.asm.tree.LdcInsnNode
 import org.objectweb.asm.tree.MethodNode
@@ -13,6 +11,14 @@ import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.*
+import xyz.qweru.cat.util.asm.CatMethodParameter
+import xyz.qweru.cat.util.asm.InsnBuilder
+import xyz.qweru.cat.util.asm.MethodTransformer
+import xyz.qweru.cat.util.asm.instructionsFor
+import xyz.qweru.cat.util.asm.newClass
+import xyz.qweru.cat.util.asm.transformMethod
+import xyz.qweru.cat.util.asm.versionFromJar
+import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {}
@@ -135,23 +141,13 @@ class StringEncryptTransformer(
     }
 
     private fun MethodTransformer.transformIndy(method: MethodNode) {
-        val toInsertBefore = hashMapOf<AbstractInsnNode, InsnList>()
-
-        replace(predicate = { it is InvokeDynamicInsnNode && isStringConcatFactory(it)}) { indy, instructions, index ->
+        if (!encryptConcat) return
+        replace(predicate = { it is InvokeDynamicInsnNode && isStringConcatFactory(it)}) { indy, _, _ ->
             indy as InvokeDynamicInsnNode
-            val recipe = (indy.bsmArgs[0] as String).toCharArray()
+            val recipe = indy.bsmArgs[0] as String
 
-            val concatString = StringBuilder()
-            var concatArgSize = 0
-
-            for (ch in recipe) {
-                if (ch == '\u0001') {
-                    concatString.append("%s")
-                    concatArgSize++
-                } else {
-                    concatString.append(ch)
-                }
-            }
+            val concatString = recipe.replace("\u0001", "%s")
+            val concatArgSize = recipe.count { it == '\u0001' }
 
             val types = Type.getArgumentTypes(indy.desc)
             logger.info { "InDy -> String $concatString (types=[${
@@ -207,10 +203,6 @@ class StringEncryptTransformer(
                 invokeStatic("java/lang/String", "format", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;")
                 // stack: ..., string
             }
-        }
-
-        insertBefore(predicate = toInsertBefore::contains) { insn, _, _ ->
-            toInsertBefore[insn]!!
         }
     }
 

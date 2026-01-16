@@ -1,4 +1,4 @@
-package xyz.qweru.cat.util
+package xyz.qweru.cat.util.thread
 
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.thread.Threads

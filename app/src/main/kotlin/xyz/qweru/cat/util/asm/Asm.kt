@@ -1,4 +1,4 @@
-package xyz.qweru.cat.util
+package xyz.qweru.cat.util.asm
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Attribute
@@ -7,6 +7,8 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.annotate.CatDsl
+import xyz.qweru.cat.util.asm.CatMethodParameter
 
 fun newClass(
     name: String,
