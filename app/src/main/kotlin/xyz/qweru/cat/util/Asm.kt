@@ -41,19 +41,28 @@ fun versionFromJar(target: JarContainer) =
 class MethodTransformer(methodNode: MethodNode) {
     val instructions: InsnList = methodNode.instructions
 
-    fun replace(list: InsnList, predicate: (AbstractInsnNode) -> Boolean) {
-        for (node in instructions.toArray()) {
-            if (!predicate.invoke(node)) continue
-            instructions.insert(node, list)
-            instructions.remove(node)
+    fun replace(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+        val insns = instructions.toArray()
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn)) continue
+            instructions.insert(insn, listProvider(insn, insns, i))
+            instructions.remove(insn)
         }
     }
 
-    fun replace(listProvider: (AbstractInsnNode) -> InsnList, predicate: (AbstractInsnNode) -> Boolean) {
-        for (node in instructions.toArray()) {
-            if (!predicate.invoke(node)) continue
-            instructions.insert(node, listProvider(node))
-            instructions.remove(node)
+    fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+        val insns = instructions.toArray()
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn)) continue
+            instructions.insertBefore(insn, listProvider(insn, insns, i))
+        }
+    }
+
+    fun find(predicate: (AbstractInsnNode) -> Boolean, consume: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> Unit) {
+        val insns = instructions.toArray()
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn)) continue
+            consume(insn, insns, i)
         }
     }
 }
@@ -120,7 +129,7 @@ class ClassBuilder(val classNode: ClassNode) {
     }
 }
 
-fun instructions(methodNode: MethodNode, builder: InsnBuilder.() -> Unit) =
+fun instructionsFor(methodNode: MethodNode, builder: InsnBuilder.() -> Unit) =
     instructions(localVariableOffset(methodNode), builder)
 
 fun instructions(localOffset: Int, builder: InsnBuilder.() -> Unit) =
@@ -146,6 +155,7 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     }
 
     /**
+     * Setup method from scratch (for adding instructions to methods use `instructionsFor(node) {}`)
      * @param ownerDesc required if the method is not static
      */
     constructor(methodNode: MethodNode, parameters: List<CatMethodParameter>, ownerDesc: String?) : this(
@@ -218,13 +228,32 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun useLocal(op: Int, index: Int) =
         instruction(VarInsnNode(op, index))
 
-    fun loadCharFromArray() {
+    fun loadCharFromArray() =
         instruction(Opcodes.CALOAD)
-    }
 
-    fun storeCharInArray() {
+    fun storeCharInArray() =
         instruction(Opcodes.CASTORE)
-    }
+
+    fun storeIntInArray() =
+        instruction(Opcodes.IASTORE)
+
+    fun storeLongInArray() =
+        instruction(Opcodes.LASTORE)
+
+    fun storeDoubleInArray() =
+        instruction(Opcodes.DASTORE)
+
+    fun storeFloatInArray() =
+        instruction(Opcodes.FASTORE)
+
+    fun storeByteInArray() =
+        instruction(Opcodes.BASTORE)
+
+    fun storeBooleanInArray() =
+        storeByteInArray()
+
+    fun storeObjectInArray() =
+        instruction(Opcodes.AASTORE)
 
     fun returnVoid() =
         instruction(Opcodes.RETURN)
@@ -234,7 +263,21 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun dup() = instruction(Opcodes.DUP)
 
+    fun dup_x1() = instruction(Opcodes.DUP_X1)
+
+    fun dup_x2() = instruction(Opcodes.DUP_X2)
+
     fun dup2() = instruction(Opcodes.DUP2)
+
+    fun dup2_x1() = instruction(Opcodes.DUP2_X1)
+
+    fun dup2_x2() = instruction(Opcodes.DUP2_X2)
+
+    fun pop() = instruction(Opcodes.POP)
+
+    fun pop2() = instruction(Opcodes.POP2)
+
+    fun swap() = instruction(Opcodes.SWAP)
 
     fun addInts() = instruction(Opcodes.IADD)
 
@@ -260,6 +303,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
         instruction(Opcodes.DUP)
         pushArgs()
         invokeSpecial(type, "<init>", descriptor)
+    }
+
+    fun newArray(type: String) {
+        instruction(TypeInsnNode(Opcodes.ANEWARRAY, type))
     }
 
     fun invokeStatic(owner: String, name: String, descriptor: String) =

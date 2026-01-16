@@ -2,18 +2,17 @@ package xyz.qweru.cat.transform.encrypt
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
+import org.objectweb.asm.tree.AbstractInsnNode
+import org.objectweb.asm.tree.InsnList
+import org.objectweb.asm.tree.InvokeDynamicInsnNode
 import org.objectweb.asm.tree.LdcInsnNode
+import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.ParameterNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.CatMethodParameter
-import xyz.qweru.cat.util.InsnBuilder
-import xyz.qweru.cat.util.createExecutorFrom
-import xyz.qweru.cat.util.instructions
-import xyz.qweru.cat.util.newClass
-import xyz.qweru.cat.util.transformMethod
-import xyz.qweru.cat.util.versionFromJar
+import xyz.qweru.cat.util.*
 import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {}
@@ -22,6 +21,8 @@ class StringEncryptTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("StringEncrypt", "Encrypt strings", target, opts) {
+
+    val encryptConcat by value("Encrypt Concat", "Also encrypts string concatenation", true)
 
     val classNode by lazy {
         newClass(
@@ -111,11 +112,8 @@ class StringEncryptTransformer(
                 parallel {
                     for (method in klass.methods) {
                         transformMethod(method) {
-                            replace(listProvider = { ldc -> instructions(method) {
-                                handleString((ldc as LdcInsnNode).cst as String)
-                            } }, {
-                                it is LdcInsnNode && it.cst is String
-                            })
+                            transformLdc(method)
+                            transformIndy(method)
                         }
                     }
                 }
@@ -125,6 +123,115 @@ class StringEncryptTransformer(
         }
     }
 
+    private fun isStringConcatFactory(indy: InvokeDynamicInsnNode): Boolean
+        = indy.name == "makeConcatWithConstants" && indy.bsm.owner == "java/lang/invoke/StringConcatFactory"
+
+    private fun MethodTransformer.transformLdc(method: MethodNode) {
+        replace({ it is LdcInsnNode && it.cst is String }) { insn, _, _ ->
+            instructionsFor(method) {
+                handleString((insn as LdcInsnNode).cst as String)
+            }
+        }
+    }
+
+    private fun MethodTransformer.transformIndy(method: MethodNode) {
+        val toInsertBefore = hashMapOf<AbstractInsnNode, InsnList>()
+
+        replace(predicate = { it is InvokeDynamicInsnNode && isStringConcatFactory(it)}) { indy, instructions, index ->
+            indy as InvokeDynamicInsnNode
+            val recipe = (indy.bsmArgs[0] as String).toCharArray()
+
+            val concatString = StringBuilder()
+            var concatArgSize = 0
+
+            for (ch in recipe) {
+                if (ch == '\u0001') {
+                    concatString.append("%s")
+                    concatArgSize++
+                } else {
+                    concatString.append(ch)
+                }
+            }
+
+            val types = Type.getArgumentTypes(indy.desc)
+            logger.info { "InDy -> String $concatString (types=[${
+                types.joinToString(", ")  
+            }])" }
+
+            instructionsFor(method) {
+                loadConstant(concatArgSize)
+                newArray("java/lang/Object")
+                dup()
+
+                for (i in 0..<concatArgSize) {
+                    val typeSort = types[i].sort
+                    if (isDoubleSize(typeSort)) {
+                        // stack: ... value i-1, value i 1/2, value i 2/2, array, array
+                        dup2_x2()
+                        // stack: ... value i-1, array, array, value i 1/2, value i 2/2, array, array
+                        pop2()
+                        // stack: ... value i-1, array, array, value i 1/2, value i 2/2
+                        loadConstant(i)
+                        // stack: ... value i-1, array, array, value i 1/2, value i 2/2, index
+                        dup_x2()
+                        // stack: ... value i-1, array, array, index, value i 1/2, value i 2/2, index
+                        pop()
+                        // stack: ... value i-1, array, array, index, value i 1/2, value i 2/2
+                    } else {
+                        // stack: ... value i-1, value i, array, array
+                        dup2_x1()
+                        // stack: ... value i-1, array, array, value i, array, array
+                        pop2()
+                        // stack: ... value i-1, array, array, value i
+                        loadConstant(i)
+                        // stack: ... value i-1, array, array, value i, index
+                        swap()
+                        // stack: ... value i-1, array, array, index, value i
+                    }
+
+                    boxPrimitive(typeSort)
+                    storeObjectInArray()
+                    // stack: ... value i-1, array
+                    dup()
+                    // stack: ... value i-1, array, array
+                }
+
+                // stack: ..., array, array
+                pop()
+                // stack: ..., array
+
+                handleString(concatString.toString())
+                // stack: ..., array, string
+                swap()
+                // stack: ..., string, array
+                invokeStatic("java/lang/String", "format", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;")
+                // stack: ..., string
+            }
+        }
+
+        insertBefore(predicate = toInsertBefore::contains) { insn, _, _ ->
+            toInsertBefore[insn]!!
+        }
+    }
+
+    private fun isDoubleSize(type: Int) =
+        type == Type.LONG || type == Type.DOUBLE
+
+    private fun InsnBuilder.boxPrimitive(type: Int) = when(type) {
+        Type.OBJECT, Type.ARRAY -> {}
+        Type.INT -> invokeStatic("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;")
+        Type.FLOAT -> invokeStatic("java/lang/Float", "valueOf", "(F)Ljava/lang/Float;")
+        Type.BOOLEAN -> invokeStatic("java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;")
+        Type.BYTE -> invokeStatic("java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;")
+        Type.SHORT -> invokeStatic("java/lang/Short", "valueOf", "(S)Ljava/lang/Short;")
+        Type.LONG -> invokeStatic("java/lang/Long", "valueOf", "(J)Ljava/lang/Long;")
+        Type.DOUBLE -> invokeStatic("java/lang/Double", "valueOf", "(D)Ljava/lang/Double;")
+        else -> throw IllegalArgumentException("Unknown type sort: $type")
+    }
+
+    /**
+     * The resulting instructions will push the passed string to the stack
+     */
     private fun InsnBuilder.handleString(string: String) {
         val key = Random.nextInt(Int.MIN_VALUE, Int.MAX_VALUE)
 
