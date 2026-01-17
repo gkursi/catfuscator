@@ -6,9 +6,9 @@ import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
+import xyz.qweru.cat.ASM
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.util.annotate.CatDsl
-import xyz.qweru.cat.util.asm.CatMethodParameter
 
 fun newClass(
     name: String,
@@ -93,7 +93,7 @@ class ClassBuilder(val classNode: ClassNode) {
         parameterAnnotations: Array<List<AnnotationNode>> = arrayOf(),
         configurator: InsnBuilder.() -> Unit
     ) {
-        val node = MethodNode()
+        val node = MethodNode(ASM)
         node.name = name
         node.access = access
         node.desc = descriptor
@@ -129,6 +129,24 @@ class ClassBuilder(val classNode: ClassNode) {
 
         classNode.methods.add(node)
     }
+
+    fun field(
+        name: String,
+        access: Int,
+        descriptor: String,
+        value: Any?,
+        signature: String? = null
+    ) {
+        val field = FieldNode(
+            ASM,
+            access,
+            name,
+            descriptor,
+            signature,
+            value
+        )
+        classNode.fields.add(field)
+    }
 }
 
 fun instructionsFor(methodNode: MethodNode, builder: InsnBuilder.() -> Unit) =
@@ -153,7 +171,7 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     val endLabel = label()
 
     init {
-        setLabel(startLabel)
+        label(startLabel)
     }
 
     /**
@@ -187,8 +205,11 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun label() = LabelNode(Label())
 
-    fun setLabel(label: LabelNode) =
+    fun label(label: LabelNode) =
         instruction(label)
+
+    operator fun LabelNode.unaryPlus() =
+        label(this)
 
     /**
      * @return the index
@@ -206,9 +227,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
             signature,
             from,
             to,
-            variableIndex++
+            variableIndex
         )
         locals.add(node)
+        variableIndex += if (descriptor == "J" || descriptor == "D") 2 else 1
         return node.index
     }
 
@@ -218,17 +240,30 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun loadLocalInt(index: Int) =
         useLocal(Opcodes.ILOAD, index)
 
+    fun loadLocalLong(index: Int) =
+        useLocal(Opcodes.LLOAD, index)
+
     fun incrementLocalInt(index: Int, increment: Int) =
         instruction(IincInsnNode(index, increment))
 
     fun storeLocalObject(index: Int) =
         useLocal(Opcodes.ASTORE, index)
 
+    fun aStore(index: Int) = storeLocalInt(index)
+
     fun storeLocalInt(index: Int) =
         useLocal(Opcodes.ISTORE, index)
 
+    fun storeLocalLong(index: Int) =
+        useLocal(Opcodes.LSTORE, index)
+
+    fun iStore(index: Int) = storeLocalInt(index)
+
     fun useLocal(op: Int, index: Int) =
         instruction(VarInsnNode(op, index))
+
+    fun loadObjectFromArray() =
+        instruction(Opcodes.AALOAD)
 
     fun loadCharFromArray() =
         instruction(Opcodes.CALOAD)
@@ -285,9 +320,38 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun xorInts() = instruction(Opcodes.IXOR)
 
+    fun xorLongs() = instruction(Opcodes.LXOR)
+
+    fun andInts() = instruction(Opcodes.IAND)
+
+    fun andLongs() = instruction(Opcodes.LAND)
+
+    fun shrLongs() = instruction(Opcodes.LSHR)
+
+    fun long2Int() = instruction(Opcodes.L2I)
+
+    fun int2Byte() = instruction(Opcodes.I2B)
+
+    fun constant0() = instruction(Opcodes.ICONST_0)
+
+    fun longConstant0() = instruction(Opcodes.LCONST_0)
+
+    fun constant4() = instruction(Opcodes.ICONST_4)
+
+    fun moduloInts() = instruction(Opcodes.IREM)
+
     fun getArraySize() = instruction(Opcodes.ARRAYLENGTH)
 
+    fun arrayLength() = getArraySize()
+
     fun jumpIfSmaller(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLT, label))
+
+    fun jumpIfGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPGE, label))
+
+    fun jump(label: LabelNode) = instruction(JumpInsnNode(Opcodes.GOTO, label))
+
+    fun tableSwitch(min: Int, max: Int, default: LabelNode, vararg labels: LabelNode) =
+        instruction(TableSwitchInsnNode(min, max, default, *labels))
 
     /**
      * @param value the constant to be loaded on the stack. This parameter must be a non-null {@link
@@ -300,6 +364,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun loadConstant(value: Any) =
         instruction(LdcInsnNode(value))
 
+    fun ldc(value: Any) = loadConstant(value)
+
     fun newObject(type: String, descriptor: String, pushArgs: () -> Unit) {
         instruction(TypeInsnNode(Opcodes.NEW, type))
         instruction(Opcodes.DUP)
@@ -307,9 +373,27 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
         invokeSpecial(type, "<init>", descriptor)
     }
 
-    fun newArray(type: String) {
+    fun newObjectArray(type: String) {
         instruction(TypeInsnNode(Opcodes.ANEWARRAY, type))
     }
+
+    fun newByteArray() =
+        instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_BYTE))
+
+    fun getStaticField(owner: String, name: String, descriptor: String) =
+        field(Opcodes.GETSTATIC, owner, name, descriptor)
+
+    fun getField(owner: String, name: String, descriptor: String) =
+        field(Opcodes.GETFIELD, owner, name, descriptor)
+
+    fun storeStaticField(owner: String, name: String, descriptor: String) =
+        field(Opcodes.PUTSTATIC, owner, name, descriptor)
+
+    fun storeField(owner: String, name: String, descriptor: String) =
+        field(Opcodes.PUTFIELD, owner, name, descriptor)
+
+    fun field(op: Int, owner: String, name: String, descriptor: String) =
+        instruction(FieldInsnNode(op, owner, name, descriptor))
 
     fun invokeStatic(owner: String, name: String, descriptor: String) =
         invoke(owner, name, descriptor, Opcodes.INVOKESTATIC)
@@ -330,7 +414,7 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
         instruction(MethodInsnNode(op, owner, name, descriptor))
 
     fun runPost() {
-        setLabel(endLabel)
+        label(endLabel)
     }
 }
 

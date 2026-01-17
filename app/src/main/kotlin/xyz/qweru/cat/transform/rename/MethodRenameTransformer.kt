@@ -10,7 +10,7 @@ class MethodRenameTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("MethodRename", "Rename methods", target, opts) {
-    private val prefix by value("Prefix", "Prefix for renamed methods", ":3__ Protected by catfuscator :3__")
+    private val prefix by value("Prefix", "Prefix for renamed methods", ":3 protected by catfuscator")
     private val excludeMain by value("Exclude Main", "Exclude any methods named `main` (required when used as runnable jar)", true)
 
     init {
@@ -21,7 +21,7 @@ class MethodRenameTransformer(
                 parallel {
                     val lookup = mappings.getOrCreateLookup(entry.key).methods
                     val node = entry.value
-                    var i = Long.MIN_VALUE
+                    var i = 0L
                     for (method in node.methods) {
                         val name = method.name
                         if (name == "<clinit>" || name == "<init>") continue

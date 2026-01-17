@@ -6,13 +6,11 @@ import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 
-private val logger = KotlinLogging.logger {}
-
 class ClassRenameTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("ClassRename", "Rename classes", target, opts) {
-    private val prefix by value("Prefix", "Renamed class prefix","goaway")
+    private val prefix by value("Prefix", "Renamed class prefix","go away #")
     private val preservePackage by value("Keep Package", "Keep original package of class", false)
     private val unicodeCrasher by value("Unicode Crasher", "Appends the null character to crash decompilers", true)
 

@@ -64,6 +64,8 @@ object JarParser {
                 val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES)
 
                 logger.info { "Computing ${node.name}" }
+                node.sourceDebug = null
+                node.sourceFile = null
                 node.accept(writer)
                 bytes["${node.name}.class"] = writer.toByteArray()
             }

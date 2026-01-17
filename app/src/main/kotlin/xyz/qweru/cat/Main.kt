@@ -3,6 +3,7 @@ package xyz.qweru.cat
 import com.github.ajalt.clikt.core.main
 import io.github.oshai.kotlinlogging.KotlinLogging
 import xyz.qweru.cat.config.Configuration
+import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.jar.JarParser
 import xyz.qweru.cat.jar.JarRemapper
 import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
@@ -28,19 +29,7 @@ object Main {
 
         // apply transformers
         // todo: configurable transformers
-
-        StringEncryptTransformer(jar, config)
-        FakeClassTransformer(jar, config)
-        FakeMethodTransformer(jar, config)
-
-        // transformers which transform existing classes/methods/etc.
-        // need to be run after others, otherwise they won't be applied
-        // to newly generated code
-//        SyntheticMethodTransformer(jar, config)
-        ClassRenameTransformer(jar, config)
-        MethodRenameTransformer(jar, config)
-        FieldRenameTransformer(jar, config)
-        LocalFieldRenameTransformer(jar, config)
+        transform(jar, config)
 
         // remap container
         JarRemapper.remap(jar, config)
@@ -48,5 +37,20 @@ object Main {
         // write container to disk
         logger.info { "Output: ${config.output}" }
         JarParser.write(jar, config)
+    }
+
+    private fun transform(jar: JarContainer, config: Configuration) {
+        StringEncryptTransformer(jar, config)
+        FakeClassTransformer(jar, config)
+        FakeMethodTransformer(jar, config)
+
+        // transformers which transform existing classes/methods/etc.
+        // need to be run after others, otherwise they won't be applied
+        // to newly generated code
+        SyntheticMethodTransformer(jar, config)
+        ClassRenameTransformer(jar, config)
+        MethodRenameTransformer(jar, config)
+        FieldRenameTransformer(jar, config)
+        LocalFieldRenameTransformer(jar, config)
     }
 }

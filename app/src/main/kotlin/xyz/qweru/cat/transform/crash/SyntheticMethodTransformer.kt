@@ -9,12 +9,14 @@ class SyntheticMethodTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("SyntheticMethods", "Add the synthetic and bridge flags to all methods to crash some decompilers", target, opts) {
+
     init {
         target.apply {
             for (node in classes.entries) {
                 if (!canTarget(node)) continue
                 val klass = node.value
                 for (method in klass.methods) {
+                    if (method.name == "<init>" || method.name == "<clinit>") continue
                     method.access = method.access or Opcodes.ACC_SYNTHETIC or Opcodes.ACC_BRIDGE
                 }
             }
