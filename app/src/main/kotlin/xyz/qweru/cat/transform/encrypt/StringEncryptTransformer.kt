@@ -12,8 +12,6 @@ import xyz.qweru.cat.util.generate.LoadBalancePool
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-private val logger = KotlinLogging.logger {}
-
 class StringEncryptTransformer(
     target: JarContainer,
     opts: Configuration,
@@ -351,9 +349,6 @@ class StringEncryptTransformer(
             val concatArgSize = recipe.count { it == '\u0001' }
 
             val types = Type.getArgumentTypes(indy.desc)
-            logger.info { "InDy : $concatString (types=[${
-                types.joinToString(", ")  
-            }])" }
 
             instructionsFor(method) {
                 loadConstant(concatArgSize)
@@ -464,7 +459,6 @@ class StringEncryptTransformer(
             }
             val c = bytesToLong(block)
             val a = b xor c
-            logger.info { "$a ^ $b == $c : ${a xor b == c} " }
             builder.append(a).append(';')
         }
 
@@ -497,16 +491,6 @@ class StringEncryptTransformer(
         for (i in 0..<Long.SIZE_BYTES) {
             result = result shl Byte.SIZE_BITS
             result = result or (b[i].toInt() and 0xFF).toLong()
-        }
-        return result
-    }
-
-    fun longToBytes(l: Long): ByteArray {
-        var long = l
-        val result = ByteArray(Long.SIZE_BYTES)
-        for (i in Long.SIZE_BYTES - 1 downTo 0) {
-            result[i] = (long and 0xFF).toByte()
-            long = long shr Byte.SIZE_BITS
         }
         return result
     }

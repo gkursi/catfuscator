@@ -52,6 +52,15 @@ class MethodTransformer(methodNode: MethodNode) {
         }
     }
 
+    fun findFirst(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+        val insns = instructions.toArray()
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn)) continue
+            instructions.insert(insn, listProvider(insn, insns, i))
+            return
+        }
+    }
+
     fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
         val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
@@ -423,7 +432,7 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 }
 
 fun localVariableOffset(methodNode: MethodNode) =
-    localVariableOffset(methodNode.access and Opcodes.ACC_STATIC == 0, methodNode.desc)
+    localVariableOffset(methodNode.access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC, methodNode.desc)
 
 fun localVariableOffset(isStatic: Boolean, methodDescriptor: String): Int =
     (Type.getArgumentsAndReturnSizes(methodDescriptor) shr 2) - (if (isStatic) 1 else 0)

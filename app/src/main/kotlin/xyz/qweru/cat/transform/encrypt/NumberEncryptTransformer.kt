@@ -38,7 +38,6 @@ class NumberEncryptTransformer(
                                 insn as IntInsnNode
                                 instructionsFor(method) {
                                     transformConstant(insn.operand)
-                                    logger.warn { "XORING " }
                                 }
                             }
                         }
@@ -53,27 +52,24 @@ class NumberEncryptTransformer(
     private fun InsnBuilder.transformConstant(value: Any) {
         val choice = Random.nextInt(3)
         when (value) {
-            is Integer -> when (choice) {
+            is Int -> when (choice) {
                 0 -> {
-                    val c = value.toInt()
-                    val b = Random.nextInt() or c
-                    val a = c or b.inv()
+                    val b = Random.nextInt() or value
+                    val a = value or b.inv()
                     ldc(a)
                     ldc(b)
                     andInts()
                 }
                 1 -> {
-                    val c = value.toInt()
                     val b = Random.nextInt()
-                    val a = b xor c
+                    val a = b xor value
                     ldc(a)
                     ldc(b)
                     xorInts()
                 }
                 2 -> {
-                    val c = value.toInt()
-                    val b = Random.nextInt() and c
-                    val a = c and b.inv()
+                    val b = Random.nextInt() and value
+                    val a = value and b.inv()
                     ldc(a)
                     ldc(b)
                     orInts()
