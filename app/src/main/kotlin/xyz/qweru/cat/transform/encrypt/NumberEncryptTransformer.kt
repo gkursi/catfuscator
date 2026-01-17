@@ -1,6 +1,5 @@
 package xyz.qweru.cat.transform.encrypt
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.IntInsnNode
 import org.objectweb.asm.tree.LdcInsnNode
@@ -13,12 +12,12 @@ import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-private val logger = KotlinLogging.logger { }
-
 class NumberEncryptTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("NumberEncrypt", "Encrypts numeric constants", target, opts, ) {
+    val smallConstants by value("Small Constants", "Encrypt small constants (ICONST_*/LCONST_*)", true)
+
     init {
         val parallel = createExecutorFrom(opts)
         target.apply {
@@ -40,6 +39,20 @@ class NumberEncryptTransformer(
                                     transformConstant(insn.operand)
                                 }
                             }
+
+                            if (!smallConstants) return@transformMethod
+
+                            replace({ isIConst(it.opcode) }) { insn, _, _ ->
+                                instructionsFor(method) {
+                                    transformConstant(getIConstValue(insn.opcode))
+                                }
+                            }
+
+                            replace({ isLConst(it.opcode) }) { insn, _, _ ->
+                                instructionsFor(method) {
+                                    transformConstant(getLConstValue(insn.opcode))
+                                }
+                            }
                         }
                     }
                 }
@@ -48,6 +61,32 @@ class NumberEncryptTransformer(
 
         parallel.await()
     }
+
+    private fun isIConst(op: Int) =
+        op == Opcodes.ICONST_M1
+                || op == Opcodes.ICONST_0
+                || op == Opcodes.ICONST_1
+                || op == Opcodes.ICONST_2
+                || op == Opcodes.ICONST_3
+                || op == Opcodes.ICONST_4
+                || op == Opcodes.ICONST_5
+
+    private fun isLConst(op: Int) =
+        op == Opcodes.LCONST_0 || op == Opcodes.LCONST_1
+
+    private fun getIConstValue(op: Int) = when(op) {
+        Opcodes.ICONST_M1 -> -1
+        Opcodes.ICONST_0 -> 0
+        Opcodes.ICONST_1 -> 1
+        Opcodes.ICONST_2 -> 2
+        Opcodes.ICONST_3 -> 3
+        Opcodes.ICONST_4 -> 4
+        Opcodes.ICONST_5 -> 5
+        else -> throw IllegalArgumentException()
+    }
+
+    private fun getLConstValue(op: Int) =
+        if (op == Opcodes.LCONST_0) 0L else 1L
 
     private fun InsnBuilder.transformConstant(value: Any) {
         val choice = Random.nextInt(3)
