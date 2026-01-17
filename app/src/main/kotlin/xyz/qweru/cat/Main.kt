@@ -7,6 +7,7 @@ import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.jar.JarParser
 import xyz.qweru.cat.jar.JarRemapper
 import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
+import xyz.qweru.cat.transform.encrypt.NumberEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
 import xyz.qweru.cat.transform.fake.FakeClassTransformer
 import xyz.qweru.cat.transform.fake.FakeMethodTransformer
@@ -41,6 +42,10 @@ object Main {
 
     private fun transform(jar: JarContainer, config: Configuration) {
         StringEncryptTransformer(jar, config)
+        NumberEncryptTransformer(jar, config)
+        NumberEncryptTransformer(jar, config)
+        NumberEncryptTransformer(jar, config)
+        NumberEncryptTransformer(jar, config)
         FakeClassTransformer(jar, config)
         FakeMethodTransformer(jar, config)
 

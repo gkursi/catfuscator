@@ -318,9 +318,13 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun addInts() = instruction(Opcodes.IADD)
 
+    fun orInts() = instruction(Opcodes.IOR)
+
     fun xorInts() = instruction(Opcodes.IXOR)
 
     fun xorLongs() = instruction(Opcodes.LXOR)
+
+    fun orLongs() = instruction(Opcodes.LOR)
 
     fun andInts() = instruction(Opcodes.IAND)
 
