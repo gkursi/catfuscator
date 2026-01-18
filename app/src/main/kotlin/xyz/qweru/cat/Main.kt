@@ -7,10 +7,9 @@ import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.jar.JarParser
 import xyz.qweru.cat.jar.JarRemapper
 import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
+import xyz.qweru.cat.transform.encrypt.ArithmeticEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.NumberEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
-import xyz.qweru.cat.transform.fake.FakeClassTransformer
-import xyz.qweru.cat.transform.fake.FakeMethodTransformer
 import xyz.qweru.cat.transform.flow.ExcessiveLabelTransformer
 import xyz.qweru.cat.transform.flow.GotoReplaceTransformer
 import xyz.qweru.cat.transform.process.FieldValueDefinitionTransformer
@@ -53,6 +52,7 @@ object Main {
         GotoReplaceTransformer(jar, config)
 
         repeat(2) { NumberEncryptTransformer(jar, config) }
+        ArithmeticEncryptTransformer(jar, config)
         SyntheticMethodTransformer(jar, config)
         ClassRenameTransformer(jar, config)
         MethodRenameTransformer(jar, config)

@@ -52,6 +52,14 @@ class MethodTransformer(methodNode: MethodNode) {
         }
     }
 
+    fun findIndexed(predicate: (AbstractInsnNode, Int) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+        val insns = instructions.toArray()
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn, i)) continue
+            instructions.insertBefore(insn, listProvider(insn, insns, i))
+        }
+    }
+
     fun findFirst(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
         val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
@@ -69,6 +77,17 @@ class MethodTransformer(methodNode: MethodNode) {
         }
     }
 
+    fun wrap(predicate: (AbstractInsnNode) -> Boolean, configure: WrapInsnProvider.() -> Unit) {
+        val insns = instructions.toArray()
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn)) continue
+            val provider = WrapInsnProvider()
+            provider.configure()
+            instructions.insertBefore(insn, provider.pre(insn, insns, i))
+            instructions.insert(insn, provider.post(insn, insns, i))
+        }
+    }
+
     fun find(predicate: (AbstractInsnNode) -> Boolean, consume: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> Unit) {
         val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
@@ -76,7 +95,14 @@ class MethodTransformer(methodNode: MethodNode) {
             consume(insn, insns, i)
         }
     }
+
+    class WrapInsnProvider() {
+        lateinit var pre: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList
+        lateinit var post: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList
+    }
 }
+
+
 
 @CatDsl
 class ClassBuilder(val classNode: ClassNode) {
@@ -325,7 +351,16 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun swap() = instruction(Opcodes.SWAP)
 
+    fun swap2() {
+        // a, b, c, d
+        dup2_x2()
+        pop2()
+        // c, d, a, b
+    }
+
     fun addInts() = instruction(Opcodes.IADD)
+
+    fun subInts() = instruction(Opcodes.ISUB)
 
     fun addLongs() = instruction(Opcodes.LADD)
 
@@ -345,7 +380,13 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun andLongs() = instruction(Opcodes.LAND)
 
+    fun shlInts() = instruction(Opcodes.ISHL)
+
     fun shrLongs() = instruction(Opcodes.LSHR)
+
+    fun shlLongs() = instruction(Opcodes.LSHL)
+
+    fun subLongs() = instruction(Opcodes.LSUB)
 
     fun long2Int() = instruction(Opcodes.L2I)
 
@@ -355,9 +396,15 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun constant0() = instruction(Opcodes.ICONST_0)
 
+    fun constant1() = instruction(Opcodes.ICONST_1)
+
     fun longConstant0() = instruction(Opcodes.LCONST_0)
 
+    fun longConstant1() = instruction(Opcodes.LCONST_1)
+
     fun constant4() = instruction(Opcodes.ICONST_4)
+
+    fun constantM1() = instruction(Opcodes.ICONST_M1)
 
     fun moduloInts() = instruction(Opcodes.IREM)
 
