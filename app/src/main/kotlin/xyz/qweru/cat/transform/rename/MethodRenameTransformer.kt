@@ -10,7 +10,7 @@ class MethodRenameTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("MethodRename", "Rename methods", target, opts) {
-    private val prefix by value("Prefix", "Prefix for renamed methods", ":3 protected by catfuscator")
+    private val prefix by value("Prefix", "Prefix for renamed methods", "method")
     private val excludeMain by value("Exclude Main", "Exclude any methods named `main` (required when used as runnable jar)", true)
 
     init {

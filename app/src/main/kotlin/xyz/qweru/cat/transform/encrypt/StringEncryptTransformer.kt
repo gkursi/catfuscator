@@ -1,6 +1,5 @@
 package xyz.qweru.cat.transform.encrypt
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
@@ -8,7 +7,7 @@ import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.asm.*
-import xyz.qweru.cat.util.generate.LoadBalancePool
+import xyz.qweru.cat.util.generate.MaxLoadPool
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
@@ -20,7 +19,7 @@ class StringEncryptTransformer(
     val encryptConcat by value("Encrypt Concat", "Encrypt string concatenation (will slow it down a LOT)", true)
     val poolLimit by value("String Pool Limit", "Max strings per pool", 4)
 
-    private val classPool = LoadBalancePool(poolLimit) {
+    private val classPool = MaxLoadPool(poolLimit) {
         newClass(
             "cat/StringPool$it",
             versionFromJar(target),
@@ -150,7 +149,7 @@ class StringEncryptTransformer(
                 incrementLocalInt(iterator, 1)
                 loadLocalInt(iterator)
                 loadLocalInt(length)
-                jumpIfSmaller(loopContent)
+                jumpIfIntSmaller(loopContent)
 
                 val buildLongs = label()
                 val longsLoop = label()
@@ -160,6 +159,8 @@ class StringEncryptTransformer(
                 val stringsSize = local("ssize", "I", buildLongs, end)
                 val stringIter = local("it", "I", buildLongs, end)
                 val stringBuilder = local("builder", "Ljava/lang/StringBuilder;", buildLongs, end)
+                val parseResult = local("parsed", "J", start, end)
+                val pooledLong = local("tl", "J", longsLoop, end)
 
                 +buildLongs
                 newObject("java/lang/StringBuilder", "()V") {}
@@ -189,7 +190,7 @@ class StringEncryptTransformer(
                 loadObjectFromArray()
                 // parse to long
                 invokeStatic("java/lang/Long", "parseLong", "(Ljava/lang/String;)J")
-                loadLocalObject(0)
+                storeLocalLong(parseResult)
 
                 loadLocalInt(stringIter)
                 constant4()
@@ -200,33 +201,43 @@ class StringEncryptTransformer(
                 val case2 = label()
                 val case3 = label()
                 val switchEnd = label()
+                val postSwitch = label()
 
                 tableSwitch(0, 2, case3, case0, case1, case2)
 
                 +case0
+                loadLocalObject(0)
                 getField(_this, "xorPool0", "J")
+                storeLocalLong(pooledLong)
                 jump(switchEnd)
 
                 +case1
+                loadLocalObject(0)
                 getField(_this, "xorPool1", "J")
+                storeLocalLong(pooledLong)
                 jump(switchEnd)
 
                 +case2
+                loadLocalObject(0)
                 getField(_this, "xorPool2", "J")
+                storeLocalLong(pooledLong)
                 jump(switchEnd)
 
                 +case3
+                loadLocalObject(0)
                 getField(_this, "xorPool3", "J")
+                storeLocalLong(pooledLong)
                 jump(switchEnd)
 
-                val theLong = local("tl", "J", switchEnd, switchEnd)
                 +switchEnd
+                loadLocalLong(parseResult)
+                loadLocalLong(pooledLong)
                 xorLongs()
-                storeLocalLong(theLong)
+                storeLocalLong(pooledLong)
 
                 newObject("java/lang/String", "([B)V") {
                     loadLocalObject(0)
-                    loadLocalLong(theLong)
+                    loadLocalLong(pooledLong)
                     invokeVirtual(_this, "longToBytes", "(J)[B")
                 }
                 invokeVirtual("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
@@ -235,9 +246,9 @@ class StringEncryptTransformer(
                 incrementLocalInt(stringIter, 1)
                 loadLocalInt(stringIter)
                 loadLocalInt(stringsSize)
-                jumpIfSmaller(longsLoop)
+                jumpIfIntSmaller(longsLoop)
 
-                +label()
+                +postSwitch
                 loadLocalObject(stringBuilder)
                 invokeVirtual("java/lang/StringBuilder", "toString", "()Ljava/lang/String;")
                 returnInstance()
@@ -298,7 +309,7 @@ class StringEncryptTransformer(
                 incrementLocalInt(i, -1)
                 loadLocalInt(i)
                 constant0()
-                jumpIfGreaterEq(loop)
+                jumpIfIntGreaterEq(loop)
 
                 loadLocalObject(result)
                 returnInstance()

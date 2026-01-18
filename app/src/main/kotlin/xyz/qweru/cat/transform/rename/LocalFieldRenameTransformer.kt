@@ -10,7 +10,7 @@ class LocalFieldRenameTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("LocalFieldRename", "Rename local fields", target, opts) {
-    private val prefix by value("Prefix", "Prefix for renamed fields", "\uAAAA\uAAAA\uAAAA\uAAAA")
+    private val prefix by value("Prefix", "Prefix for renamed fields", "field")
 
     init {
         target.apply {

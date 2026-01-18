@@ -12,6 +12,10 @@ import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
+/**
+ * idea:
+ * generate array for op numbers where every next number is previous +/-/^/&/| some number
+ */
 class NumberEncryptTransformer(
     target: JarContainer,
     opts: Configuration

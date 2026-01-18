@@ -209,8 +209,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
         }
     }
 
-    private fun instruction(insn: AbstractInsnNode) = instructions.add(insn)
-    private fun instruction(insn: Int) = instructions.add(InsnNode(insn))
+    fun instruction(insn: AbstractInsnNode) = instructions.add(insn)
+    fun instruction(insn: Int) = instructions.add(InsnNode(insn))
 
     fun label() = LabelNode(Label())
 
@@ -327,11 +327,17 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun addInts() = instruction(Opcodes.IADD)
 
+    fun addLongs() = instruction(Opcodes.LADD)
+
     fun orInts() = instruction(Opcodes.IOR)
 
     fun xorInts() = instruction(Opcodes.IXOR)
 
     fun xorLongs() = instruction(Opcodes.LXOR)
+
+    fun mulLongs() = instruction(Opcodes.LMUL)
+
+    fun mulInts() = instruction(Opcodes.IMUL)
 
     fun orLongs() = instruction(Opcodes.LOR)
 
@@ -345,6 +351,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun int2Byte() = instruction(Opcodes.I2B)
 
+    fun int2Long() = instruction(Opcodes.I2L)
+
     fun constant0() = instruction(Opcodes.ICONST_0)
 
     fun longConstant0() = instruction(Opcodes.LCONST_0)
@@ -353,15 +361,23 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun moduloInts() = instruction(Opcodes.IREM)
 
+    fun moduloLongs() = instruction(Opcodes.LREM)
+
     fun getArraySize() = instruction(Opcodes.ARRAYLENGTH)
 
     fun arrayLength() = getArraySize()
 
-    fun jumpIfSmaller(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLT, label))
+    fun jumpIfIntSmaller(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLT, label))
 
-    fun jumpIfGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPGE, label))
+    fun jumpIfIntGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPGE, label))
+
+    fun jumpIfLessThan(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFLT, label))
+
+    fun jumpIfGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFGE, label))
 
     fun jump(label: LabelNode) = instruction(JumpInsnNode(Opcodes.GOTO, label))
+
+    fun compareLongs() = instruction(Opcodes.LCMP)
 
     fun tableSwitch(min: Int, max: Int, default: LabelNode, vararg labels: LabelNode) =
         instruction(TableSwitchInsnNode(min, max, default, *labels))
@@ -426,6 +442,9 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun invoke(owner: String, name: String, descriptor: String, op: Int) =
         instruction(MethodInsnNode(op, owner, name, descriptor))
 
+    fun throwEx() =
+        instruction(Opcodes.ATHROW)
+
     fun runPost() {
         label(endLabel)
     }
@@ -437,3 +456,5 @@ fun localVariableOffset(methodNode: MethodNode) =
 fun localVariableOffset(isStatic: Boolean, methodDescriptor: String): Int =
     (Type.getArgumentsAndReturnSizes(methodDescriptor) shr 2) - (if (isStatic) 1 else 0)
 
+val MethodNode.isStatic: Boolean
+    get() = access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC

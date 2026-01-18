@@ -10,9 +10,9 @@ class ClassRenameTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("ClassRename", "Rename classes", target, opts) {
-    private val prefix by value("Prefix", "Renamed class prefix","go away #")
+    private val prefix by value("Prefix", "Renamed class prefix","class")
     private val preservePackage by value("Keep Package", "Keep original package of class", false)
-    private val unicodeCrasher by value("Unicode Crasher", "Appends the null character to crash decompilers", true)
+    private val unicodeCrasher by value("Unicode Crasher", "Appends the null character to crash decompilers", false)
 
     init {
         target.apply {

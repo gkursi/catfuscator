@@ -5,7 +5,7 @@ import java.util.ArrayDeque
 /**
  * Load-balancing based pool
  */
-class LoadBalancePool<T>(val maxLoad: Int = 4, val supplier: (Int) -> T) {
+class MaxLoadPool<T>(val maxLoad: Int = 4, val supplier: (Int) -> T) {
     private val existing = ArrayDeque<T>()
     private var currentLoad = 0
 

@@ -10,7 +10,7 @@ class FieldRenameTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("FieldRename", "Rename fields", target, opts) {
-    private val prefix by value("Prefix", "Prefix for renamed fields", "\uAAAC")
+    private val prefix by value("Prefix", "Prefix for renamed fields", "field")
 
     init {
         target.apply {

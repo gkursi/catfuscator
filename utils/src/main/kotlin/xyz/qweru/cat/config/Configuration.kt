@@ -75,7 +75,7 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
         help = "Tasks per thread for remapping"
     )
         .int()
-        .default(1)
+        .default(4)
 
     /* ASM parsing options */
 
@@ -96,7 +96,7 @@ class Configuration(private val callback: Configuration.() -> Unit) : CliktComma
         help = "Tasks per thread for ASM multithreading"
     )
         .int()
-        .default(50)
+        .default(2)
 
     override fun run() = callback()
 }

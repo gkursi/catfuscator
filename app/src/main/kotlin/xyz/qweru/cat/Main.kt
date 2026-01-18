@@ -6,11 +6,18 @@ import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.jar.JarParser
 import xyz.qweru.cat.jar.JarRemapper
+import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
 import xyz.qweru.cat.transform.encrypt.NumberEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
 import xyz.qweru.cat.transform.fake.FakeClassTransformer
 import xyz.qweru.cat.transform.fake.FakeMethodTransformer
+import xyz.qweru.cat.transform.flow.ExcessiveLabelTransformer
+import xyz.qweru.cat.transform.flow.GotoReplaceTransformer
 import xyz.qweru.cat.transform.process.FieldValueDefinitionTransformer
+import xyz.qweru.cat.transform.rename.ClassRenameTransformer
+import xyz.qweru.cat.transform.rename.FieldRenameTransformer
+import xyz.qweru.cat.transform.rename.LocalFieldRenameTransformer
+import xyz.qweru.cat.transform.rename.MethodRenameTransformer
 
 fun main(args : Array<String>) =
     Configuration { Main.main(this) }
@@ -37,17 +44,19 @@ object Main {
     }
 
     private fun transform(jar: JarContainer, config: Configuration) {
-        FakeClassTransformer(jar, config)
-        FakeMethodTransformer(jar, config)
+//        FakeClassTransformer(jar, config)
+//        FakeMethodTransformer(jar, config)
 
         StringEncryptTransformer(jar, config)
         FieldValueDefinitionTransformer(jar, config)
+        ExcessiveLabelTransformer(jar, config)
+        GotoReplaceTransformer(jar, config)
 
-        repeat(4) { NumberEncryptTransformer(jar, config) }
-//        SyntheticMethodTransformer(jar, config)
-//        ClassRenameTransformer(jar, config)
-//        MethodRenameTransformer(jar, config)
-//        FieldRenameTransformer(jar, config)
-//        LocalFieldRenameTransformer(jar, config)
+        repeat(2) { NumberEncryptTransformer(jar, config) }
+        SyntheticMethodTransformer(jar, config)
+        ClassRenameTransformer(jar, config)
+        MethodRenameTransformer(jar, config)
+        FieldRenameTransformer(jar, config)
+        LocalFieldRenameTransformer(jar, config)
     }
 }
