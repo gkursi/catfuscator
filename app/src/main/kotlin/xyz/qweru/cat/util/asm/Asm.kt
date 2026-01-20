@@ -1,6 +1,7 @@
 package xyz.qweru.cat.util.asm
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap
 import org.objectweb.asm.Attribute
 import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
@@ -303,6 +304,9 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun loadCharFromArray() =
         instruction(Opcodes.CALOAD)
 
+    fun loadByteFromArray() =
+        instruction(Opcodes.BALOAD)
+
     fun storeCharInArray() =
         instruction(Opcodes.CASTORE)
 
@@ -404,6 +408,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun constant4() = instruction(Opcodes.ICONST_4)
 
+    fun constant5() = instruction(Opcodes.ICONST_5)
+
     fun constantM1() = instruction(Opcodes.ICONST_M1)
 
     fun moduloInts() = instruction(Opcodes.IREM)
@@ -428,6 +434,13 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun tableSwitch(min: Int, max: Int, default: LabelNode, vararg labels: LabelNode) =
         instruction(TableSwitchInsnNode(min, max, default, *labels))
+
+    fun lookupSwitchBuilder(configure: LookupSwitchBuilder.() -> Unit) {
+        val builder = LookupSwitchBuilder()
+        builder.apply { startInsn() }
+        builder.configure()
+        builder.apply { endInsn() }
+    }
 
     /**
      * @param value the constant to be loaded on the stack. This parameter must be a non-null {@link
@@ -497,6 +510,70 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     }
 }
 
+class LookupSwitchBuilder {
+    private val cases = Int2ObjectArrayMap<LabelNode>(5)
+    private val switchNode = LookupSwitchInsnNode(null, intArrayOf(), arrayOf())
+    private val endNode = LabelNode(Label())
+    private var default = LabelNode(Label())
+    private var needsDefault = true
+
+    fun InsnBuilder.case(key: Int, block: InsnBuilder.(LabelNode) -> Unit) {
+        val label = label()
+        +label
+        block(endNode)
+        cases[key] = label
+    }
+
+    fun case(key: Int, block: LabelNode) {
+        cases[key] = block
+    }
+
+    fun InsnBuilder.defaultCase(block: InsnBuilder.(LabelNode) -> Unit) {
+        if (!needsDefault) throw IllegalStateException("Double default cases")
+        val label = label()
+        +label
+        block(endNode)
+        default = label
+        needsDefault = false
+    }
+
+    fun defaultCase(label: LabelNode) {
+        if (!needsDefault) throw IllegalStateException("Double default cases")
+        needsDefault = false
+        default = label
+    }
+
+    /**
+     * Requires a default label
+     */
+    fun build() {
+        if (needsDefault) throw IllegalStateException("Building without a default")
+        switchNode.dflt = default
+        switchNode.keys = ArrayList(cases.keys)
+        switchNode.labels = ArrayList(cases.values)
+    }
+
+    fun InsnBuilder.startInsn() {
+        instruction(switchNode)
+    }
+
+    /**
+     * Does not require a default label
+     */
+    fun InsnBuilder.endInsn() {
+        if (needsDefault) createEmptyDefault()
+        build()
+        instruction(endNode)
+    }
+
+    private fun InsnBuilder.createEmptyDefault() {
+        if (!needsDefault) throw IllegalStateException()
+        needsDefault = false
+        instruction(default)
+        jump(endNode)
+    }
+}
+
 fun localVariableOffset(methodNode: MethodNode) =
     localVariableOffset(methodNode.access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC, methodNode.desc)
 
@@ -504,4 +581,7 @@ fun localVariableOffset(isStatic: Boolean, methodDescriptor: String): Int =
     (Type.getArgumentsAndReturnSizes(methodDescriptor) shr 2) - (if (isStatic) 1 else 0)
 
 val MethodNode.isStatic: Boolean
+    get() = access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC
+
+val FieldNode.isStatic: Boolean
     get() = access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC

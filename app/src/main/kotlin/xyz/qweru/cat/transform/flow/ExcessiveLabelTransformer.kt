@@ -15,7 +15,7 @@ import kotlin.random.Random
 class ExcessiveLabelTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("TooManyLabels", "Adds a lot of labels, impacts performance a lot", target, opts) {
+) : Transformer("TooManyLabels", "Adds a lot of labels, impacts file size a lot", target, opts) {
     val count by value("Count", "Amount of label per label", 1)
     val secondaryCount by value("Secondary Count", "Amount of extra label per label", 1)
     val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 2)

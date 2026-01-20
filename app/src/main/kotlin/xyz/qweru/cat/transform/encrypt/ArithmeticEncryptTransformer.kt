@@ -5,13 +5,11 @@ import org.objectweb.asm.tree.MethodNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.asm.InsnBuilder
 import xyz.qweru.cat.util.asm.MethodTransformer
 import xyz.qweru.cat.util.asm.instructionsFor
 import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 class ArithmeticEncryptTransformer(
     target: JarContainer,
@@ -19,27 +17,7 @@ class ArithmeticEncryptTransformer(
 ) : Transformer("ArithmeticEncrypt", "Encrypt arithmetic ops", target, opts) {
     val simple by value("Simple", "Replace addition/subtraction", true)
     val binary by value("Binary", "Replace binary insns", true)
-    val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", false)
-
-    /*
-        Expected output:
-        i is at 1
-        n + i = 6
-        n - i = 4
-        n * i = 5
-        n / i = 5
-        n ^ i = 4
-        n | i = 5
-        n & i = 1
-        i is at 2
-        n + i = 7
-        n - i = 3
-        n * i = 10
-        n / i = 2
-        n ^ i = 7
-        n | i = 7
-        n & i = 0
-     */
+    val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", true)
 
     init {
         val parallel = createExecutorFrom(opts)
