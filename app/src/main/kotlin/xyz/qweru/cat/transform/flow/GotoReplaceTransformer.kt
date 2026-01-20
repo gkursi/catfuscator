@@ -1,6 +1,7 @@
 package xyz.qweru.cat.transform.flow
 
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.JumpInsnNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer

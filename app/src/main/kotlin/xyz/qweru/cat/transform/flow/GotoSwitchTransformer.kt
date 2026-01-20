@@ -20,11 +20,11 @@ import kotlin.random.Random
 class GotoSwitchTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("GotoSwitch", "Replace goto opcodes with switch statements", target, opts) {
+) : Transformer("GotoSwitch", "Replace goto opcodes with switch statements (unstable)", target, opts) {
     val heavy by value("Fake Cases", "Creates fake cases", true)
     val heavyCount by value("Case Count", "Fake case count", 10)
     val heavyVarUsage by value("Max Var Usage", "Max var usage in fake cases", 5)
-    val scopeCrasher by value("Scope Crasher", "Crashes most decompilers with funny jumps", true)
+    val scopeCrasher by value("Scope Crasher", "Crashes most decompilers with funny jumps", false)
 
     init {
         val parallel = createExecutorFrom(opts)
@@ -68,12 +68,13 @@ class GotoSwitchTransformer(
 
                                 lookupSwitchBuilder {
                                     defaultCase {
-                                        pickRandom(
-                                            {
-                                                getStaticField(_this, intPool.getNext(), "I")
-                                                getStaticField(_this, intPool.getNext(), "I")
-                                            }
-                                        )
+                                        // todo
+//                                        pickRandom(
+//                                            {
+//                                                getStaticField(_this, intPool.getNext(), "I")
+//                                                getStaticField(_this, intPool.getNext(), "I")
+//                                            }
+//                                        )
                                         jump(goto.label)
                                     }
 

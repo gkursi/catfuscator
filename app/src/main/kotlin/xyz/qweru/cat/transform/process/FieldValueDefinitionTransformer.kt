@@ -1,6 +1,7 @@
 package xyz.qweru.cat.transform.process
 
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodInsnNode
 import xyz.qweru.cat.config.Configuration

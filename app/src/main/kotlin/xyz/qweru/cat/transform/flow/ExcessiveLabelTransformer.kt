@@ -18,7 +18,7 @@ class ExcessiveLabelTransformer(
 ) : Transformer("TooManyLabels", "Adds a lot of labels, impacts file size a lot", target, opts) {
     val count by value("Count", "Amount of label per label", 1)
     val secondaryCount by value("Secondary Count", "Amount of extra label per label", 1)
-    val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 2)
+    val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 1)
     val jumpChance by value("Jump Chance", "Chance of jumping", 1)
 
     init {

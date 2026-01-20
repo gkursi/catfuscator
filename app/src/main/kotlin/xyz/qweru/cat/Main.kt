@@ -48,18 +48,18 @@ object Main {
 //        FakeClassTransformer(jar, config)
 //        FakeMethodTransformer(jar, config)
 
-//        StringEncryptTransformer(jar, config)
-//        GotoSwitchTransformer(jar, config)
-//        GotoReplaceTransformer(jar, config)
-//        FieldValueDefinitionTransformer(jar, config)
-//        ExcessiveLabelTransformer(jar, config)
+        GotoSwitchTransformer(jar, config)
+        StringEncryptTransformer(jar, config)
         GotoControlTransformer(jar, config)
+        GotoReplaceTransformer(jar, config)
+        FieldValueDefinitionTransformer(jar, config)
+        ExcessiveLabelTransformer(jar, config)
 
-//        repeat(2) { NumberEncryptTransformer(jar, config) }
-//        ArithmeticEncryptTransformer(jar, config)
-//        SyntheticMethodTransformer(jar, config)
-//        ClassRenameTransformer(jar, config)
-//        MethodRenameTransformer(jar, config)
+        repeat(2) { NumberEncryptTransformer(jar, config) }
+        ArithmeticEncryptTransformer(jar, config)
+        SyntheticMethodTransformer(jar, config)
+        ClassRenameTransformer(jar, config)
+        MethodRenameTransformer(jar, config)
         FieldRenameTransformer(jar, config)
         LocalFieldRenameTransformer(jar, config)
     }
