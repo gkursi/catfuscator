@@ -32,4 +32,6 @@ fun Frame<BasicValue>.isSameFrame(other: Frame<BasicValue>): Boolean {
             return false
         }
     }
+
+    return true
 }

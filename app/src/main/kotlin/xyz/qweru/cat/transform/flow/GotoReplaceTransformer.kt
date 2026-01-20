@@ -11,13 +11,13 @@ import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.generate.MaxLoadPool
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
+import kotlin.random.nextInt
 
 class GotoReplaceTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("GotoReplace", "Replace goto opcodes with conditional jumps that always succeed", target, opts) {
-    val light by value("Light", "Disables heavy obfuscation", false)
-    val heavy by value("Heavy", "Disables light obfuscation", true)
+    val heavy by value("Heavy", "Disables light obfuscation", false)
     val maxVarUses by value("Max Field Use", "Max amount of uses a single generated field can have", 15)
     val exceptions by value("Exceptions", "Possible exceptions to throw", arrayListOf(
         "java/lang/Exception",
@@ -80,7 +80,7 @@ class GotoReplaceTransformer(
                             goto as JumpInsnNode
                             instructionsFor(method) {
                                 val field = fields.getNext()
-                                when (Random.nextInt(if (heavy) 1 else 0, if (light) 1 else 3)) {
+                                when (if (heavy) Random.nextInt(3) else 0) {
                                     0 -> {
                                         getStaticField(klass.name, field, "J")
                                         ldc(Random.nextLong(Long.MAX_VALUE))
