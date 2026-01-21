@@ -78,18 +78,18 @@ class StringEncryptTransformer(
                 returnVoid()
             }
 
-            field("k", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong())
+            field("k", PUBLIC_STATIC, "J", Random.nextLong())
 
-            field("pool0", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong())
+            field("pool0", PUBLIC_STATIC, "J", Random.nextLong())
             field("xorPool0", Opcodes.ACC_PUBLIC, "J", Random.nextLong())
 
-            field("pool1", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong())
+            field("pool1", PUBLIC_STATIC, "J", Random.nextLong())
             field("xorPool1", Opcodes.ACC_PUBLIC, "J", Random.nextLong())
 
-            field("pool2", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong())
+            field("pool2", PUBLIC_STATIC, "J", Random.nextLong())
             field("xorPool2", Opcodes.ACC_PUBLIC, "J", Random.nextLong())
 
-            field("pool3", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong())
+            field("pool3", PUBLIC_STATIC, "J", Random.nextLong())
             field("xorPool3", Opcodes.ACC_PUBLIC, "J", Random.nextLong())
 
 

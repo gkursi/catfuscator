@@ -37,7 +37,7 @@ class GotoControlTransformer(
                             var frames = analyseMethod(klass, method)
                             val controlGroups = hashMapOf<FrameState, FrameControl>()
 
-                            find({ it is JumpInsnNode && it.opcode == Opcodes.GOTO }) { _, _, i ->
+                            find({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) { _, _, i ->
                                 val frame = frames[i] ?: return@find
                                 controlGroups.computeIfAbsent(FrameState.of(frame)) {
                                     FrameControl(LabelNode(Label()))
@@ -56,17 +56,37 @@ class GotoControlTransformer(
 
                             frames = analyseMethod(klass, method) // todo: ^^
 
-                            insertBefore({ it is JumpInsnNode && it.opcode == Opcodes.GOTO }) { jmp, _, i ->
-                                instructionsFor(method) {
-                                    jmp as JumpInsnNode
-                                    val frame = frames[i] ?: return@instructionsFor
-                                    val state = FrameState.of(frame)
-                                    val control = controlGroups[state]!!
-                                    val labels = control.switch!!.labels
-                                    ldc(labels.size)
-                                    labels.add(jmp.label)
-                                    control.switch!!.max++
-                                    jmp.label = control.label
+                            wrap({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) {
+                                pre = { jmp, _, i ->
+                                    instructionsFor(method) {
+                                        jmp as JumpInsnNode
+                                        val frame = frames[i] ?: return@instructionsFor
+                                        val state = FrameState.of(frame)
+                                        val control = controlGroups[state]!!
+                                        val labels = control.switch!!.labels
+                                        ldc(labels.size)
+                                        if (jmp.opcode != Opcodes.GOTO) {
+
+                                            if (jmp.opcode >= Opcodes.IFEQ && jmp.opcode <= Opcodes.IFLE) {
+                                                dup_x1()
+                                            } else {
+                                                dup_x2()
+                                            }
+
+                                            pop()
+                                        }
+                                        labels.add(jmp.label)
+                                        control.switch!!.max++
+                                        jmp.label = control.label
+                                    }
+                                }
+                                post = { jmp, _, i ->
+                                    instructionsFor(method) {
+                                        if (frames[i] == null || jmp.opcode == Opcodes.GOTO) {
+                                            return@instructionsFor
+                                        }
+                                        pop()
+                                    }
                                 }
                             }
 

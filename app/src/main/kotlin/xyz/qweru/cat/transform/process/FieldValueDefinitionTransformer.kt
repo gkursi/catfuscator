@@ -1,16 +1,12 @@
 package xyz.qweru.cat.transform.process
 
 import org.objectweb.asm.Opcodes
-import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodInsnNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.asm.ClassBuilder
-import xyz.qweru.cat.util.asm.instructions
-import xyz.qweru.cat.util.asm.transformClass
-import xyz.qweru.cat.util.asm.transformMethod
+import xyz.qweru.cat.util.asm.*
 import xyz.qweru.cat.util.thread.createExecutorFrom
 
 class FieldValueDefinitionTransformer(
@@ -69,7 +65,7 @@ class FieldValueDefinitionTransformer(
                 }
             }
         } else {
-            method("<init>", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "()V") {
+            method("<init>", PUBLIC_STATIC, "()V") {
                 loadLocalObject(0)
                 invokeSpecial(klass.superName ?: "java/lang/Object", "<init>", "()V")
 
@@ -88,7 +84,7 @@ class FieldValueDefinitionTransformer(
                 it.add(node.instructions)
             }
         } else {
-            method("<clinit>", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "()V") {
+            method("<clinit>", PUBLIC_STATIC, "()V") {
                 instructions.add(staticInsns)
                 returnVoid()
             }

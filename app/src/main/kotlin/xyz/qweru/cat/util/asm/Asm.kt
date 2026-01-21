@@ -11,6 +11,8 @@ import xyz.qweru.cat.ASM
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.util.annotate.CatDsl
 
+val PUBLIC_STATIC = Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC
+
 fun newClass(
     name: String,
     version: Int,

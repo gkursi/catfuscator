@@ -51,13 +51,13 @@ object Main {
         GotoSwitchTransformer(jar, config)
         StringEncryptTransformer(jar, config)
         GotoControlTransformer(jar, config)
-        GotoReplaceTransformer(jar, config)
+//        GotoReplaceTransformer(jar, config)
         FieldValueDefinitionTransformer(jar, config)
-        ExcessiveLabelTransformer(jar, config)
+//        ExcessiveLabelTransformer(jar, config)
 
-        repeat(2) { NumberEncryptTransformer(jar, config) }
-        ArithmeticEncryptTransformer(jar, config)
-        SyntheticMethodTransformer(jar, config)
+//        repeat(2) { NumberEncryptTransformer(jar, config) }
+//        ArithmeticEncryptTransformer(jar, config)
+//        SyntheticMethodTransformer(jar, config)
         ClassRenameTransformer(jar, config)
         MethodRenameTransformer(jar, config)
         FieldRenameTransformer(jar, config)

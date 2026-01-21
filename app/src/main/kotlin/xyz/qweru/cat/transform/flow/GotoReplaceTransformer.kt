@@ -1,18 +1,17 @@
 package xyz.qweru.cat.transform.flow
 
 import org.objectweb.asm.Opcodes
-import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.JumpInsnNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
+import xyz.qweru.cat.util.asm.PUBLIC_STATIC
 import xyz.qweru.cat.util.asm.instructionsFor
 import xyz.qweru.cat.util.asm.transformClass
 import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.generate.MaxLoadPool
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 class GotoReplaceTransformer(
     target: JarContainer,
@@ -64,13 +63,13 @@ class GotoReplaceTransformer(
                 val garbage = "garbageField${klass.name.replace("/", "_")}"
 
                 transformClass(klass) {
-                    field(garbage, Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong())
+                    field(garbage, PUBLIC_STATIC, "J", Random.nextLong())
                 }
 
                 val fields = MaxLoadPool(maxVarUses) {
                     val fieldName = "${it}gotoReplace$${klass.name.replace("/", "_")}"
                     transformClass(klass) {
-                        field(fieldName, Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "J", Random.nextLong(Long.MIN_VALUE, 0L))
+                        field(fieldName, PUBLIC_STATIC, "J", Random.nextLong(Long.MIN_VALUE, 0L))
                     }
                     fieldName
                 }
