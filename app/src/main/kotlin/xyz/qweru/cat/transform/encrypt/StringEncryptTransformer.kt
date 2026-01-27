@@ -343,7 +343,7 @@ class StringEncryptTransformer(
 
     private fun MethodTransformer.transformLdc(method: MethodNode, klass: ClassNode) {
         if (!encryptConst) return
-        replace({ it is LdcInsnNode && it.cst is String }) { insn, _, _ ->
+        createPass().replace({ it is LdcInsnNode && it.cst is String }) { insn, _, _ ->
             instructionsFor(method) {
                 handleString((insn as LdcInsnNode).cst as String, klass)
             }
@@ -352,7 +352,7 @@ class StringEncryptTransformer(
 
     private fun MethodTransformer.transformIndy(method: MethodNode, klass: ClassNode) {
         if (!encryptConcat) return
-        replace(predicate = { it is InvokeDynamicInsnNode && isStringConcatFactory(it)}) { indy, _, _ ->
+        createPass().replace(predicate = { it is InvokeDynamicInsnNode && isStringConcatFactory(it)}) { indy, _, _ ->
             indy as InvokeDynamicInsnNode
             val recipe = indy.bsmArgs[0] as String
 

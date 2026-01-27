@@ -37,7 +37,7 @@ class GotoControlTransformer(
                             var frames = analyseMethod(klass, method)
                             val controlGroups = hashMapOf<FrameState, FrameControl>()
 
-                            find({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) { _, _, i ->
+                            createPass().find({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) { _, _, i ->
                                 val frame = frames[i] ?: return@find
                                 controlGroups.computeIfAbsent(FrameState.of(frame)) {
                                     FrameControl(LabelNode(Label()))
@@ -56,7 +56,7 @@ class GotoControlTransformer(
 
                             frames = analyseMethod(klass, method) // todo: ^^
 
-                            wrap({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) {
+                            createPass().wrap({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) {
                                 pre = { jmp, _, i ->
                                     instructionsFor(method) {
                                         jmp as JumpInsnNode

@@ -76,7 +76,7 @@ class GotoReplaceTransformer(
 
                 for (method in klass.methods) {
                     transformMethod(method) {
-                        replace({ it.opcode == Opcodes.GOTO }) { goto, _, _ ->
+                        createPass().replace({ it.opcode == Opcodes.GOTO }) { goto, _, _ ->
                             goto as JumpInsnNode
                             instructionsFor(method) {
                                 val field = fields.getNext()

@@ -60,7 +60,7 @@ class FieldValueDefinitionTransformer(
         if (klass.methods.any { it.name == "<init>" }) {
             val node = classNode.methods.first { it.name == "<init>" }!!
             transformMethod(node) {
-                findFirst({ it is MethodInsnNode }) { _, _, _ ->
+                createPass().findFirst({ it is MethodInsnNode }) { _, _, _ ->
                     insns
                 }
             }

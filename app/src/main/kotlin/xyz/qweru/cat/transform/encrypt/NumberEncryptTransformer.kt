@@ -30,14 +30,14 @@ class NumberEncryptTransformer(
                 parallel {
                     for (method in entry.value.methods) {
                         transformMethod(method) {
-                            replace({ it is LdcInsnNode }) { ldc, _, _ ->
+                            createPass().replace({ it is LdcInsnNode }) { ldc, _, _ ->
                                 ldc as LdcInsnNode
                                 instructionsFor(method) {
                                     transformConstant(ldc.cst)
                                 }
                             }
 
-                            replace({ it is IntInsnNode && it.opcode != Opcodes.NEWARRAY }) { insn, _, _ ->
+                            createPass().replace({ it is IntInsnNode && it.opcode != Opcodes.NEWARRAY }) { insn, _, _ ->
                                 insn as IntInsnNode
                                 instructionsFor(method) {
                                     transformConstant(insn.operand)
@@ -46,13 +46,13 @@ class NumberEncryptTransformer(
 
                             if (!smallConstants) return@transformMethod
 
-                            replace({ isIConst(it.opcode) }) { insn, _, _ ->
+                            createPass().replace({ isIConst(it.opcode) }) { insn, _, _ ->
                                 instructionsFor(method) {
                                     transformConstant(getIConstValue(insn.opcode))
                                 }
                             }
 
-                            replace({ isLConst(it.opcode) }) { insn, _, _ ->
+                            createPass().replace({ isLConst(it.opcode) }) { insn, _, _ ->
                                 instructionsFor(method) {
                                     transformConstant(getLConstValue(insn.opcode))
                                 }

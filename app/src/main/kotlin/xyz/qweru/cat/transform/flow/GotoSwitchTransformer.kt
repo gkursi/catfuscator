@@ -50,7 +50,7 @@ class GotoSwitchTransformer(
                 for (method in klass.methods) {
                     transformMethod(method) {
                         var labels = arrayListOf<LabelNode>()
-                        replace({ it.opcode == Opcodes.GOTO }) { goto, _, _ ->
+                        createPass().replace({ it.opcode == Opcodes.GOTO }) { goto, _, _ ->
                             goto as JumpInsnNode
 
                             if (!scopeCrasher) {

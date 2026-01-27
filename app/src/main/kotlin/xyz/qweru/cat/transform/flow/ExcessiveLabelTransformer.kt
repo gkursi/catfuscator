@@ -33,7 +33,7 @@ class ExcessiveLabelTransformer(
                 parallel {
                     for (method in klass.methods) {
                         transformMethod(method) {
-                            insertBefore({ it is LabelNode }) { ln, _, _ ->
+                            createPass().insertBefore({ it is LabelNode }) { ln, _, _ ->
                                 ln as LabelNode
                                 instructionsFor(method) {
                                     val emptyLabels = Array(secondaryCount + 1) { label() }
@@ -56,7 +56,7 @@ class ExcessiveLabelTransformer(
                                 }
                             }
 
-                            replace({ it is JumpInsnNode && it !is ExcludedJumpInsnNode && labelLookup.containsKey(it.label.label) }) { jmp, _, _ ->
+                            createPass().replace({ it is JumpInsnNode && it !is ExcludedJumpInsnNode && labelLookup.containsKey(it.label.label) }) { jmp, _, _ ->
                                 jmp as JumpInsnNode
                                 instructionsFor(method) {
                                     instruction(JumpInsnNode(jmp.opcode, labelLookup[jmp.label.label]!!.random()))

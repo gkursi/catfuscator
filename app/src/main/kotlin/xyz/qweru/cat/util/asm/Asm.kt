@@ -45,9 +45,22 @@ fun versionFromJar(target: JarContainer) =
 
 class MethodTransformer(methodNode: MethodNode) {
     val instructions: InsnList = methodNode.instructions
+    fun createPass() = TransformPass(instructions)
+}
+
+class TransformPass(val instructions: InsnList) {
+    var insns: Array<AbstractInsnNode> = instructions.toArray()
+
+    /**
+     * Removes any insn where `predicate(insn) == false`
+     * from transformations, while keeping them in the original insn list
+     */
+    fun onlyTake(predicate: (AbstractInsnNode) -> Boolean): TransformPass {
+        insns = insns.filter(predicate).toTypedArray()
+        return this
+    }
 
     fun replace(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
-        val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             instructions.insert(insn, listProvider(insn, insns, i))
@@ -56,7 +69,6 @@ class MethodTransformer(methodNode: MethodNode) {
     }
 
     fun findIndexed(predicate: (AbstractInsnNode, Int) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
-        val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn, i)) continue
             instructions.insertBefore(insn, listProvider(insn, insns, i))
@@ -64,7 +76,6 @@ class MethodTransformer(methodNode: MethodNode) {
     }
 
     fun findFirst(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
-        val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             instructions.insert(insn, listProvider(insn, insns, i))
@@ -73,7 +84,6 @@ class MethodTransformer(methodNode: MethodNode) {
     }
 
     fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
-        val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             instructions.insertBefore(insn, listProvider(insn, insns, i))
@@ -81,7 +91,6 @@ class MethodTransformer(methodNode: MethodNode) {
     }
 
     fun wrap(predicate: (AbstractInsnNode) -> Boolean, configure: WrapInsnProvider.() -> Unit) {
-        val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             val provider = WrapInsnProvider()
@@ -92,20 +101,17 @@ class MethodTransformer(methodNode: MethodNode) {
     }
 
     fun find(predicate: (AbstractInsnNode) -> Boolean, consume: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> Unit) {
-        val insns = instructions.toArray()
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             consume(insn, insns, i)
         }
     }
 
-    class WrapInsnProvider() {
+    class WrapInsnProvider {
         lateinit var pre: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList
         lateinit var post: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList
     }
 }
-
-
 
 @CatDsl
 class ClassBuilder(val classNode: ClassNode) {

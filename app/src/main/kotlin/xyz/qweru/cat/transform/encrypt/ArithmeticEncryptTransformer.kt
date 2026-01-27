@@ -40,7 +40,7 @@ class ArithmeticEncryptTransformer(
     private fun MethodTransformer.replaceSimple(method: MethodNode) {
         if (!simple) return
 
-        replace({ it.opcode == Opcodes.IADD }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.IADD }) { _, _, _ ->
             instructionsFor(method) {
                 when(Random.nextInt(3)) {
                     0 -> {
@@ -72,7 +72,7 @@ class ArithmeticEncryptTransformer(
             }
         }
 
-        replace({ it.opcode == Opcodes.ISUB  }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.ISUB  }) { _, _, _ ->
             instructionsFor(method) {
                 when(Random.nextInt(2)) {
                     0 -> {
@@ -100,7 +100,7 @@ class ArithmeticEncryptTransformer(
             }
         }
 
-        replace({ it.opcode == Opcodes.LADD }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.LADD }) { _, _, _ ->
             instructionsFor(method) {
                 ldc(-1L)
                 xorLongs()
@@ -110,7 +110,7 @@ class ArithmeticEncryptTransformer(
             }
         }
 
-        replace({ it.opcode == Opcodes.LSUB  }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.LSUB  }) { _, _, _ ->
             instructionsFor(method) {
                 ldc(-1L)
                 xorLongs() // a, ~b
@@ -124,7 +124,7 @@ class ArithmeticEncryptTransformer(
     private fun MethodTransformer.replaceBinary(method: MethodNode) {
         if (!binary) return
 
-        replace({ it.opcode == Opcodes.IAND }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.IAND }) { _, _, _ ->
             instructionsFor(method) {
                 constantM1()
                 xorInts()
@@ -138,7 +138,7 @@ class ArithmeticEncryptTransformer(
             }
         }
 
-        replace({ it.opcode == Opcodes.IOR }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.IOR }) { _, _, _ ->
             instructionsFor(method) {
                 constantM1()
                 xorInts()
@@ -152,7 +152,7 @@ class ArithmeticEncryptTransformer(
             }
         }
 
-        replace({ it.opcode == Opcodes.LAND }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.LAND }) { _, _, _ ->
             instructionsFor(method) {
                 ldc(-1L)
                 xorLongs()
@@ -166,7 +166,7 @@ class ArithmeticEncryptTransformer(
             }
         }
 
-        replace({ it.opcode == Opcodes.LOR }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.LOR }) { _, _, _ ->
             instructionsFor(method) {
                 ldc(-1L)
                 xorLongs()
@@ -184,7 +184,7 @@ class ArithmeticEncryptTransformer(
     private fun MethodTransformer.replaceXor(method: MethodNode) {
         if (!heavyXor) return
 
-        replace({ it.opcode == Opcodes.IXOR }) { _, _, _ ->
+        createPass().replace({ it.opcode == Opcodes.IXOR }) { _, _, _ ->
             instructionsFor(method) {
                 when (Random.nextInt(2)) {
                     0 -> {

@@ -50,20 +50,22 @@ object Main {
 //        FakeMethodTransformer(jar, config)
 
 //        GotoSwitchTransformer(jar, config)
-//        StringEncryptTransformer(jar, config)
-//        GotoControlTransformer(jar, config)
+        StringEncryptTransformer(jar, config)
+        GotoControlTransformer(jar, config)
 //        GotoReplaceTransformer(jar, config)
-//        FieldValueDefinitionTransformer(jar, config)
-//        ExcessiveLabelTransformer(jar, config)
+        FieldValueDefinitionTransformer(jar, config)
+        ExcessiveLabelTransformer(jar, config)
 
         MethodCallEncryptTransformer(jar, config)
 
-//        repeat(2) { NumberEncryptTransformer(jar, config) }
-//        ArithmeticEncryptTransformer(jar, config)
-//        SyntheticMethodTransformer(jar, config)
-//        ClassRenameTransformer(jar, config)
-//        MethodRenameTransformer(jar, config)
-//        FieldRenameTransformer(jar, config)
-//        LocalFieldRenameTransformer(jar, config)
+        repeat(1) { NumberEncryptTransformer(jar, config) }
+        ArithmeticEncryptTransformer(jar, config)
+        SyntheticMethodTransformer(jar, config)
+        ClassRenameTransformer(jar, config)
+        MethodRenameTransformer(jar, config)
+        FieldRenameTransformer(jar, config)
+        LocalFieldRenameTransformer(jar, config)
+
+        MethodCallEncryptTransformer.Post(jar, config)
     }
 }

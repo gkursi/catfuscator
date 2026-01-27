@@ -4,6 +4,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
+import org.objectweb.asm.tree.FrameNode
+import org.objectweb.asm.tree.LabelNode
+import org.objectweb.asm.tree.LdcInsnNode
+import org.objectweb.asm.tree.LineNumberNode
 import org.objectweb.asm.tree.MethodInsnNode
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
@@ -14,6 +18,20 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 private val logger = KotlinLogging.logger {  }
 
+private const val invokeDesc = "(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;"
+private const val poolName = "cat/MethodPool"
+private const val invokeMethod = "call"
+
+private const val clazz = "java/lang/Class"
+private const val mhandle = "java/lang/invoke/MethodHandle"
+private const val mtype = "java/lang/invoke/MethodType"
+private const val mhandles = "java/lang/invoke/MethodHandles"
+private const val mhandlesLookup = $$"$$mhandles$Lookup"
+
+/**
+ * todo:  shuffled method args
+ * todo:  constructor support(?)
+ */
 class MethodCallEncryptTransformer(
     target: JarContainer,
     opts: Configuration
@@ -22,18 +40,14 @@ class MethodCallEncryptTransformer(
     init {
         target.apply {
             val parallel = createExecutorFrom(opts)
-
             val targets = CopyOnWriteArrayList<Method>()
-            val invokeDesc = "(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;"
-            val poolName = "cat/MethodPool"
-            val invokeMethod = "call"
 
             for (entry in classes) {
                 if (!canTarget(entry)) continue
                 parallel {
                     for (method in entry.value.methods) {
                         transformMethod(method) {
-                            replace({ it is MethodInsnNode && it.opcode != Opcodes.INVOKEINTERFACE && it.name != "<init>" }) { invoke, _, _ ->
+                            createPass().replace({ it is MethodInsnNode && it.opcode != Opcodes.INVOKEINTERFACE && it.name != "<init>" }) { invoke, _, _ ->
                                 instructionsFor(method) {
                                     invoke as MethodInsnNode
 
@@ -124,11 +138,6 @@ class MethodCallEncryptTransformer(
     }
 
     private fun InsnBuilder.getHandle(method: Method) {
-        val clazz = "java/lang/Class"
-        val mhandle = "java/lang/invoke/MethodHandle"
-        val mtype = "java/lang/invoke/MethodType"
-        val mhandles = "java/lang/invoke/MethodHandles"
-        val lookup = $$"$$mhandles$Lookup"
         val args = Type.getArgumentTypes(method.desc)
 
         // obtain the base methodhandle
@@ -141,8 +150,8 @@ class MethodCallEncryptTransformer(
 
             ldc(Type.getType("L${method.owner};"))
             dup()
-            invokeStatic(mhandles, "lookup", "()L$lookup;")
-            invokeStatic(mhandles, "privateLookupIn", "(L$clazz;L$lookup;)L$lookup;")
+            invokeStatic(mhandles, "lookup", "()L$mhandlesLookup;")
+            invokeStatic(mhandles, "privateLookupIn", "(L$clazz;L$mhandlesLookup;)L$mhandlesLookup;")
             swap()
 
             ldc(method.name)
@@ -163,17 +172,17 @@ class MethodCallEncryptTransformer(
 
             when (method.tag) {
                 Opcodes.H_INVOKESTATIC -> invokeVirtual(
-                    lookup, "findStatic",
+                    mhandlesLookup, "findStatic",
                     "(L$clazz;Ljava/lang/String;L$mtype;)L$mhandle;"
                 )
                 Opcodes.H_INVOKEVIRTUAL -> invokeVirtual(
-                    lookup, "findVirtual",
+                    mhandlesLookup, "findVirtual",
                     "(L$clazz;Ljava/lang/String;L$mtype;)L$mhandle;"
                 )
                 Opcodes.H_INVOKESPECIAL -> {
                     ldc(Type.getType("L${method.owner};")) // lookup, cl, name, mtype, caller
                     invokeVirtual(
-                        lookup, "findSpecial",
+                        mhandlesLookup, "findSpecial",
                         "(L$clazz;Ljava/lang/String;L$mtype;L$clazz;)L$mhandle;"
                     )
                 }
@@ -201,5 +210,62 @@ class MethodCallEncryptTransformer(
 
         fun hash(): String =
              xyz.qweru.cat.util.crypto.hash("$tag: $owner#$name$desc $isStatic")
+    }
+
+    // Workaround for my weird remapping pipeline.
+    // Todo: find a better solution
+
+    class Post(
+        target: JarContainer,
+        opts: Configuration
+    ) : Transformer("PostMCET", "Post transformer for method call encryption, required when using method renaming", target, opts) {
+        init {
+            target.apply {
+                transformMethod(classes[poolName]!!.methods.first { it.name == "<clinit>" }) {
+                    createPass()
+                        .onlyTake { it !is LabelNode && it !is LineNumberNode && it !is FrameNode }
+                        .find({ it is LdcInsnNode && it.cst is String }) { ldc, insns, i ->
+                            ldc as LdcInsnNode
+                            if (i < 6 || insns[i - 1].opcode != Opcodes.SWAP) {
+                                return@find
+                            }
+
+                            val lookup = insns[i - 3]
+                            if (lookup !is MethodInsnNode || lookup.owner != mhandles || lookup.name != "lookup") {
+                                return@find
+                            }
+
+                            val privateLookupIn = insns[i - 2]
+                            if (privateLookupIn !is MethodInsnNode || privateLookupIn.owner != mhandles || privateLookupIn.name != "privateLookupIn") {
+                                privateLookupIn as MethodInsnNode
+                                logger.warn { "owner=${privateLookupIn.owner} (expected $mhandlesLookup)" }
+                                logger.warn { "name=${privateLookupIn.name} (expected privateLookupIn)" }
+                                return@find
+                            }
+
+                            val typeInsn = insns[i - 5]
+                            if (typeInsn !is LdcInsnNode || typeInsn.cst !is Type) {
+                                return@find
+                            }
+                            val type = typeInsn.cst as Type
+
+                            val klass = mappings.getLookup(type.internalName)
+                            if (klass == null) {
+                                logger.warn { "No mapping for type $type" }
+                                return@find
+                            }
+
+                            val method = klass.methods.get(ldc.cst as String)
+                            if (method == null) {
+                                logger.warn { "No mapping for method ${ldc.cst} of type $type" }
+                                return@find
+                            }
+
+                            logger.info { "Post processor mapped ${ldc.cst} to $method (type $type)" }
+                            ldc.cst = method
+                        }
+                }
+            }
+        }
     }
 }
