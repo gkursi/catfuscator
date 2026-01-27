@@ -1,8 +1,11 @@
 package xyz.qweru.cat.transform.rename
 
+import org.objectweb.asm.Opcodes
 import xyz.qweru.cat.config.Configuration
 import xyz.qweru.cat.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
+import xyz.qweru.cat.util.asm.isEnum
+import xyz.qweru.cat.util.asm.isStatic
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.collections.iterator
 
@@ -25,6 +28,7 @@ class MethodRenameTransformer(
                     for (method in node.methods) {
                         val name = method.name
                         if (name == "<clinit>" || name == "<init>") continue
+                        if (name == "values" && method.isStatic && node.isEnum) continue
                         if (excludeMain && name == "main") continue
                         lookup.put(name, "$prefix$i")
                         i++

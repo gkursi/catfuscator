@@ -609,6 +609,9 @@ val MethodNode.isStatic: Boolean
 val FieldNode.isStatic: Boolean
     get() = access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC
 
+val ClassNode.isEnum: Boolean
+    get() = access and Opcodes.ACC_ENUM == Opcodes.ACC_ENUM
+
 fun getArgumentTypesWithThis(ownerDescriptor: String, methodDescriptor: String, isStatic: Boolean) =
     if (isStatic) {
         Type.getArgumentTypes(methodDescriptor)

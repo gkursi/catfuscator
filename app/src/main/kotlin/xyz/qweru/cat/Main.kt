@@ -51,12 +51,12 @@ object Main {
 
 //        GotoSwitchTransformer(jar, config)
         StringEncryptTransformer(jar, config)
+        ExcessiveLabelTransformer(jar, config)
         GotoControlTransformer(jar, config)
 //        GotoReplaceTransformer(jar, config)
         FieldValueDefinitionTransformer(jar, config)
-        ExcessiveLabelTransformer(jar, config)
 
-        MethodCallEncryptTransformer(jar, config)
+//        MethodCallEncryptTransformer(jar, config)
 
         repeat(1) { NumberEncryptTransformer(jar, config) }
         ArithmeticEncryptTransformer(jar, config)
@@ -66,6 +66,6 @@ object Main {
         FieldRenameTransformer(jar, config)
         LocalFieldRenameTransformer(jar, config)
 
-        MethodCallEncryptTransformer.Post(jar, config)
+//        MethodCallEncryptTransformer.Post(jar, config)
     }
 }
