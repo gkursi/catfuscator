@@ -25,7 +25,7 @@ class FieldValueDefinitionTransformer(
 
                         val staticInsns = instructions(0) {
                             for (fieldNode in classNode.fields) {
-                                if (fieldNode.value == null || fieldNode.access and Opcodes.ACC_STATIC != Opcodes.ACC_STATIC) continue
+                                if (fieldNode.value == null || fieldNode.isEnum || !fieldNode.isStatic) continue
                                 val value = fieldNode.value
                                 fieldNode.value = null
                                 ldc(value)
@@ -35,7 +35,7 @@ class FieldValueDefinitionTransformer(
 
                         val nonStaticInsns = instructions(0) {
                             for (fieldNode in classNode.fields) {
-                                if (fieldNode.value == null || fieldNode.access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC) continue
+                                if (fieldNode.value == null || fieldNode.isEnum || fieldNode.isStatic) continue
                                 val value = fieldNode.value
                                 fieldNode.value = null
                                 loadLocalObject(0)

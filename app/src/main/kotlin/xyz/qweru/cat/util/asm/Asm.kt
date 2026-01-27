@@ -612,6 +612,14 @@ val FieldNode.isStatic: Boolean
 val ClassNode.isEnum: Boolean
     get() = access and Opcodes.ACC_ENUM == Opcodes.ACC_ENUM
 
+val FieldNode.isEnum: Boolean
+    get() = access and Opcodes.ACC_ENUM == Opcodes.ACC_ENUM
+
+val MethodNode.isEnumMethod: Boolean
+    get() = isStatic && name.let {
+        it == "<clinit>" || it == "values" || it == $$"$values"
+    }
+
 fun getArgumentTypesWithThis(ownerDescriptor: String, methodDescriptor: String, isStatic: Boolean) =
     if (isStatic) {
         Type.getArgumentTypes(methodDescriptor)

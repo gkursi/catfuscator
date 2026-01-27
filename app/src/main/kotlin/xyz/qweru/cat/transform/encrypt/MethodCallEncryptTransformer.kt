@@ -44,8 +44,10 @@ class MethodCallEncryptTransformer(
 
             for (entry in classes) {
                 if (!canTarget(entry)) continue
+                val klass = entry.value
                 parallel {
-                    for (method in entry.value.methods) {
+                    for (method in klass.methods) {
+                        if (klass.isEnum && method.isEnumMethod) continue
                         transformMethod(method) {
                             createPass().replace({ it is MethodInsnNode && it.opcode != Opcodes.INVOKEINTERFACE && it.name != "<init>" }) { invoke, _, _ ->
                                 instructionsFor(method) {

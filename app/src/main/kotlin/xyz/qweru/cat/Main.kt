@@ -14,7 +14,6 @@ import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
 import xyz.qweru.cat.transform.flow.ExcessiveLabelTransformer
 import xyz.qweru.cat.transform.flow.GotoControlTransformer
 import xyz.qweru.cat.transform.flow.GotoReplaceTransformer
-import xyz.qweru.cat.transform.flow.GotoSwitchTransformer
 import xyz.qweru.cat.transform.process.FieldValueDefinitionTransformer
 import xyz.qweru.cat.transform.rename.ClassRenameTransformer
 import xyz.qweru.cat.transform.rename.FieldRenameTransformer
@@ -49,14 +48,13 @@ object Main {
 //        FakeClassTransformer(jar, config)
 //        FakeMethodTransformer(jar, config)
 
-//        GotoSwitchTransformer(jar, config)
         StringEncryptTransformer(jar, config)
         ExcessiveLabelTransformer(jar, config)
         GotoControlTransformer(jar, config)
 //        GotoReplaceTransformer(jar, config)
         FieldValueDefinitionTransformer(jar, config)
 
-//        MethodCallEncryptTransformer(jar, config)
+        MethodCallEncryptTransformer(jar, config)
 
         repeat(1) { NumberEncryptTransformer(jar, config) }
         ArithmeticEncryptTransformer(jar, config)
@@ -66,6 +64,6 @@ object Main {
         FieldRenameTransformer(jar, config)
         LocalFieldRenameTransformer(jar, config)
 
-//        MethodCallEncryptTransformer.Post(jar, config)
+        MethodCallEncryptTransformer.Post(jar, config)
     }
 }

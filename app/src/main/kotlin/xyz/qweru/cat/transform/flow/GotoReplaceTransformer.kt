@@ -58,8 +58,8 @@ class GotoReplaceTransformer(
         target.apply {
             for (entry in classes.entries) {
                 if (!canTarget(entry)) continue
-                val klass = entry.value
 
+                val klass = entry.value
                 val garbage = "garbageField${klass.name.replace("/", "_")}"
 
                 transformClass(klass) {
@@ -78,6 +78,8 @@ class GotoReplaceTransformer(
                     transformMethod(method) {
                         createPass().replace({ it.opcode == Opcodes.GOTO }) { goto, _, _ ->
                             goto as JumpInsnNode
+
+                            // todo: split in to smaller blocks and add more choices
                             instructionsFor(method) {
                                 val field = fields.getNext()
                                 when (if (heavy) Random.nextInt(3) else 0) {
@@ -91,7 +93,7 @@ class GotoReplaceTransformer(
                                         val negLabel = label()
                                         val nonNegLabel = label()
                                         val endLabel = label()
-//
+
                                         getStaticField(klass.name, field, "J")
                                         ldc(Random.nextLong())
                                         andLongs()
