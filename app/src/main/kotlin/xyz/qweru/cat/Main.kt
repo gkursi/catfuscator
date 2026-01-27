@@ -8,6 +8,7 @@ import xyz.qweru.cat.jar.JarParser
 import xyz.qweru.cat.jar.JarRemapper
 import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
 import xyz.qweru.cat.transform.encrypt.ArithmeticEncryptTransformer
+import xyz.qweru.cat.transform.encrypt.MethodCallEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.NumberEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
 import xyz.qweru.cat.transform.flow.ExcessiveLabelTransformer
@@ -48,19 +49,21 @@ object Main {
 //        FakeClassTransformer(jar, config)
 //        FakeMethodTransformer(jar, config)
 
-        GotoSwitchTransformer(jar, config)
-        StringEncryptTransformer(jar, config)
-        GotoControlTransformer(jar, config)
+//        GotoSwitchTransformer(jar, config)
+//        StringEncryptTransformer(jar, config)
+//        GotoControlTransformer(jar, config)
 //        GotoReplaceTransformer(jar, config)
-        FieldValueDefinitionTransformer(jar, config)
+//        FieldValueDefinitionTransformer(jar, config)
 //        ExcessiveLabelTransformer(jar, config)
+
+        MethodCallEncryptTransformer(jar, config)
 
 //        repeat(2) { NumberEncryptTransformer(jar, config) }
 //        ArithmeticEncryptTransformer(jar, config)
 //        SyntheticMethodTransformer(jar, config)
-        ClassRenameTransformer(jar, config)
-        MethodRenameTransformer(jar, config)
-        FieldRenameTransformer(jar, config)
-        LocalFieldRenameTransformer(jar, config)
+//        ClassRenameTransformer(jar, config)
+//        MethodRenameTransformer(jar, config)
+//        FieldRenameTransformer(jar, config)
+//        LocalFieldRenameTransformer(jar, config)
     }
 }

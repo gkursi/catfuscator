@@ -400,6 +400,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun int2Long() = instruction(Opcodes.I2L)
 
+    fun constantNull() = instruction(Opcodes.ACONST_NULL)
+
     fun constant0() = instruction(Opcodes.ICONST_0)
 
     fun constant1() = instruction(Opcodes.ICONST_1)
@@ -430,6 +432,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun jumpIfGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFGE, label))
 
+    fun jumpIfNonNull(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFNONNULL, label))
+
+    fun jumpIfNull(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFNULL, label))
+
     fun jump(label: LabelNode) = instruction(JumpInsnNode(Opcodes.GOTO, label))
 
     fun compareLongs() = instruction(Opcodes.LCMP)
@@ -452,10 +458,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
      *        constants, for classes whose version is 51 or a {@link ConstantDynamic} for a constant
      *        dynamic for classes whose version is 55.
      */
-    fun loadConstant(value: Any) =
+    fun loadConstant(value: Any?) =
         instruction(LdcInsnNode(value))
 
-    fun ldc(value: Any) = loadConstant(value)
+    fun ldc(value: Any?) = loadConstant(value)
 
     fun newObject(type: String, descriptor: String, pushArgs: () -> Unit) {
         instruction(TypeInsnNode(Opcodes.NEW, type))
@@ -506,6 +512,15 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun throwEx() =
         instruction(Opcodes.ATHROW)
+
+    fun checkCast(type: String) =
+        instruction(TypeInsnNode(Opcodes.CHECKCAST, type))
+
+    fun logStdout() {
+        getStaticField("java/lang/System", "out", "Ljava/io/PrintStream;")
+        swap()
+        invokeVirtual("java/io/PrintStream", "println", "(Ljava/lang/Object;)V")
+    }
 
     fun runPost() {
         label(endLabel)
@@ -587,3 +602,10 @@ val MethodNode.isStatic: Boolean
 
 val FieldNode.isStatic: Boolean
     get() = access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC
+
+fun getArgumentTypesWithThis(ownerDescriptor: String, methodDescriptor: String, isStatic: Boolean) =
+    if (isStatic) {
+        Type.getArgumentTypes(methodDescriptor)
+    } else {
+        arrayOf(Type.getType(ownerDescriptor)) + Type.getArgumentTypes(methodDescriptor)
+    }

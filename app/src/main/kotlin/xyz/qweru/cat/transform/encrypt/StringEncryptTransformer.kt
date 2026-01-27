@@ -362,45 +362,7 @@ class StringEncryptTransformer(
             val types = Type.getArgumentTypes(indy.desc)
 
             instructionsFor(method) {
-                loadConstant(concatArgSize)
-                newObjectArray("java/lang/Object")
-                dup()
-
-                for (i in 0..<concatArgSize) {
-                    val typeSort = types[i].sort
-                    if (isDoubleSize(typeSort)) {
-                        // stack: ... value i-1, value i 1/2, value i 2/2, array, array
-                        dup2_x2()
-                        // stack: ... value i-1, array, array, value i 1/2, value i 2/2, array, array
-                        pop2()
-                        // stack: ... value i-1, array, array, value i 1/2, value i 2/2
-                        loadConstant(i)
-                        // stack: ... value i-1, array, array, value i 1/2, value i 2/2, index
-                        dup_x2()
-                        // stack: ... value i-1, array, array, index, value i 1/2, value i 2/2, index
-                        pop()
-                        // stack: ... value i-1, array, array, index, value i 1/2, value i 2/2
-                    } else {
-                        // stack: ... value i-1, value i, array, array
-                        dup2_x1()
-                        // stack: ... value i-1, array, array, value i, array, array
-                        pop2()
-                        // stack: ... value i-1, array, array, value i
-                        loadConstant(i)
-                        // stack: ... value i-1, array, array, value i, index
-                        swap()
-                        // stack: ... value i-1, array, array, index, value i
-                    }
-
-                    boxPrimitive(typeSort)
-                    storeObjectInArray()
-                    // stack: ... value i-1, array
-                    dup()
-                    // stack: ... value i-1, array, array
-                }
-
-                // stack: ..., array, array
-                pop()
+                createArrayFromStack(types, concatArgSize)
                 // stack: ..., array
 
                 handleString(concatString, klass)
@@ -411,21 +373,6 @@ class StringEncryptTransformer(
                 // stack: ..., string
             }
         }
-    }
-
-    private fun isDoubleSize(type: Int) =
-        type == Type.LONG || type == Type.DOUBLE
-
-    private fun InsnBuilder.boxPrimitive(type: Int) = when(type) {
-        Type.OBJECT, Type.ARRAY -> {}
-        Type.INT -> invokeStatic("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;")
-        Type.FLOAT -> invokeStatic("java/lang/Float", "valueOf", "(F)Ljava/lang/Float;")
-        Type.BOOLEAN -> invokeStatic("java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;")
-        Type.BYTE -> invokeStatic("java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;")
-        Type.SHORT -> invokeStatic("java/lang/Short", "valueOf", "(S)Ljava/lang/Short;")
-        Type.LONG -> invokeStatic("java/lang/Long", "valueOf", "(J)Ljava/lang/Long;")
-        Type.DOUBLE -> invokeStatic("java/lang/Double", "valueOf", "(D)Ljava/lang/Double;")
-        else -> throw IllegalArgumentException("Unknown type sort: $type")
     }
 
     /**

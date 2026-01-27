@@ -19,7 +19,7 @@ object JarParser {
 
     fun read(config: Configuration) = JarFile(config.input).use { jar ->
         val timer = Timer()
-        val classOpts = ClassReader.SKIP_FRAMES or if (config.strip) 2 else 0
+        val classOpts = ClassReader.SKIP_FRAMES /*or if (config.strip) 2 else 0*/
         val container = JarContainer()
         val parallel = Threads.optional(config.threadAsm)
             { fromCount(jar.size(), config.threadAsmCapacity) }
