@@ -200,6 +200,6 @@ class MethodCallEncryptTransformer(
         val isStatic = tag == Opcodes.H_INVOKESTATIC
 
         fun hash(): String =
-             xyz.qweru.cat.util.crypto.hash("$tag: $owner#$name$desc")
+             xyz.qweru.cat.util.crypto.hash("$tag: $owner#$name$desc $isStatic")
     }
 }
