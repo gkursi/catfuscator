@@ -8,8 +8,8 @@ import org.objectweb.asm.tree.LabelNode
 import org.objectweb.asm.tree.TableSwitchInsnNode
 import org.objectweb.asm.tree.analysis.BasicValue
 import org.objectweb.asm.tree.analysis.Frame
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.asm.InsnBuilder
 import xyz.qweru.cat.util.asm.analyseMethod
@@ -89,9 +89,6 @@ class GotoControlTransformer(
                                     }
                                 }
                             }
-
-                            // also do the call hiding thing with methodhandles
-                            // please thank you mrpp mrpp meow mreow mrow :3
                         }
                     }
                 }
@@ -110,7 +107,7 @@ class GotoControlTransformer(
         instruction(table)
         +default
         newObject("java/lang/Exception", "()V") {}
-        throwEx()
+        throwException()
         +post
         return table
     }

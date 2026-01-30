@@ -1,4 +1,4 @@
-package xyz.qweru.cat.config
+package xyz.qweru.cat.util.config
 
 import xyz.qweru.cat.transform.Transformer
 import kotlin.properties.ReadOnlyProperty

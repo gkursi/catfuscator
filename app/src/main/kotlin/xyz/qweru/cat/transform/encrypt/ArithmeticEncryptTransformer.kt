@@ -2,8 +2,8 @@ package xyz.qweru.cat.transform.encrypt
 
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.MethodNode
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.asm.MethodTransformer
 import xyz.qweru.cat.util.asm.instructionsFor

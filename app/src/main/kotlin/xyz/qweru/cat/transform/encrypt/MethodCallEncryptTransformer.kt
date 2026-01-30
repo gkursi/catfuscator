@@ -9,10 +9,20 @@ import org.objectweb.asm.tree.LabelNode
 import org.objectweb.asm.tree.LdcInsnNode
 import org.objectweb.asm.tree.LineNumberNode
 import org.objectweb.asm.tree.MethodInsnNode
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.asm.InsnBuilder
+import xyz.qweru.cat.util.asm.PUBLIC_STATIC
+import xyz.qweru.cat.util.asm.createArrayFromStack
+import xyz.qweru.cat.util.asm.instructionsFor
+import xyz.qweru.cat.util.asm.isEnum
+import xyz.qweru.cat.util.asm.isEnumMethod
+import xyz.qweru.cat.util.asm.newClass
+import xyz.qweru.cat.util.asm.pushType
+import xyz.qweru.cat.util.asm.transformMethod
+import xyz.qweru.cat.util.asm.unboxType
+import xyz.qweru.cat.util.asm.versionFromJar
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.asm.*
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -53,7 +63,12 @@ class MethodCallEncryptTransformer(
                                 instructionsFor(method) {
                                     invoke as MethodInsnNode
 
-                                    val mInvoke = Method(invoke.owner, invoke.name, invoke.desc, mapTag(invoke.name, invoke.opcode))
+                                    val mInvoke = Method(
+                                        invoke.owner,
+                                        invoke.name,
+                                        invoke.desc,
+                                        mapTag(invoke.name, invoke.opcode)
+                                    )
                                     val types = Type.getArgumentTypes(invoke.desc)
 
                                     targets.add(mInvoke)
@@ -90,7 +105,11 @@ class MethodCallEncryptTransformer(
                     val target = 2 // Ljava/lang/String;
                     getStaticField(poolName, "map", "Ljava/util/concurrent/ConcurrentHashMap;")
                     loadLocalObject(target)
-                    invokeVirtual("java/util/concurrent/ConcurrentHashMap", "get", "(Ljava/lang/Object;)Ljava/lang/Object;")
+                    invokeVirtual(
+                        "java/util/concurrent/ConcurrentHashMap",
+                        "get",
+                        "(Ljava/lang/Object;)Ljava/lang/Object;"
+                    )
                     checkCast("java/lang/invoke/MethodHandle")
 
                     val static = label()
@@ -98,11 +117,19 @@ class MethodCallEncryptTransformer(
                     jumpIfNull(static)
 
                     loadLocalObject(instance)
-                    invokeVirtual("java/lang/invoke/MethodHandle", "bindTo", "(Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;") // L
+                    invokeVirtual(
+                        "java/lang/invoke/MethodHandle",
+                        "bindTo",
+                        "(Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;"
+                    ) // L
 
                     +static // mh
                     loadLocalObject(args) // mh, [L
-                    invokeVirtual("java/lang/invoke/MethodHandle", "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;") // L
+                    invokeVirtual(
+                        "java/lang/invoke/MethodHandle",
+                        "invoke",
+                        "([Ljava/lang/Object;)Ljava/lang/Object;"
+                    ) // L
                     returnInstance() // Ljava/lang/Object;
                 }
 

@@ -1,12 +1,17 @@
 package xyz.qweru.cat.transform.process
 
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodInsnNode
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.asm.ClassBuilder
+import xyz.qweru.cat.util.asm.PUBLIC_STATIC
+import xyz.qweru.cat.util.asm.instructions
+import xyz.qweru.cat.util.asm.isEnum
+import xyz.qweru.cat.util.asm.isStatic
+import xyz.qweru.cat.util.asm.transformClass
+import xyz.qweru.cat.util.asm.transformMethod
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.asm.*
 import xyz.qweru.cat.util.thread.createExecutorFrom
 
 class FieldValueDefinitionTransformer(
@@ -60,7 +65,7 @@ class FieldValueDefinitionTransformer(
         if (klass.methods.any { it.name == "<init>" }) {
             val node = classNode.methods.first { it.name == "<init>" }!!
             transformMethod(node) {
-                createPass().findFirst({ it is MethodInsnNode }) { _, _, _ ->
+                createPass().insertFirst({ it is MethodInsnNode }) { _, _, _ ->
                     insns
                 }
             }

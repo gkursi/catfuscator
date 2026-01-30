@@ -3,10 +3,18 @@ package xyz.qweru.cat.transform.encrypt
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.asm.CMethodParameter
+import xyz.qweru.cat.util.asm.InsnBuilder
+import xyz.qweru.cat.util.asm.MethodTransformer
+import xyz.qweru.cat.util.asm.PUBLIC_STATIC
+import xyz.qweru.cat.util.asm.createArrayFromStack
+import xyz.qweru.cat.util.asm.instructionsFor
+import xyz.qweru.cat.util.asm.newClass
+import xyz.qweru.cat.util.asm.transformMethod
+import xyz.qweru.cat.util.asm.versionFromJar
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.asm.*
 import xyz.qweru.cat.util.generate.MaxLoadPool
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
@@ -98,11 +106,11 @@ class StringEncryptTransformer(
                 Opcodes.ACC_PUBLIC,
                 "(Ljava/lang/String;I)Ljava/lang/String;",
                 parameters = listOf(
-                    CatMethodParameter(
+                    CMethodParameter(
                         ParameterNode("target", Opcodes.ACC_FINAL),
                         "Ljava/lang/String;"
                     ),
-                    CatMethodParameter(
+                    CMethodParameter(
                         ParameterNode("key", Opcodes.ACC_FINAL),
                         "I"
                     )
@@ -259,7 +267,7 @@ class StringEncryptTransformer(
                 Opcodes.ACC_PUBLIC,
                 "(J)[B",
                 parameters = listOf(
-                    CatMethodParameter(
+                    CMethodParameter(
                         ParameterNode("long", Opcodes.ACC_FINAL),
                         "J"
                     )

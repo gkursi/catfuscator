@@ -3,8 +3,8 @@ package xyz.qweru.cat.transform.fake
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 
 private val logger = KotlinLogging.logger {}

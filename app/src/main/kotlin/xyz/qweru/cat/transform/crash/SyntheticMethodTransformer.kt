@@ -1,8 +1,8 @@
 package xyz.qweru.cat.transform.crash
 
 import org.objectweb.asm.Opcodes
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 
 class SyntheticMethodTransformer(

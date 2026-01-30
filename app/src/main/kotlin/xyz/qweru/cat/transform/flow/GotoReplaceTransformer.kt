@@ -2,8 +2,8 @@ package xyz.qweru.cat.transform.flow
 
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
-import xyz.qweru.cat.config.Configuration
-import xyz.qweru.cat.jar.JarContainer
+import xyz.qweru.cat.util.config.Configuration
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.asm.PUBLIC_STATIC
 import xyz.qweru.cat.util.asm.instructionsFor
@@ -164,7 +164,7 @@ class GotoReplaceTransformer(
                                     }
                                 }
                                 newObject(exceptions.random(), "()V") {}
-                                throwEx()
+                                throwException()
                                 when (Random.nextInt(3)) {
                                     0 -> {
                                         getStaticField(klass.name, field, "J")
@@ -174,7 +174,7 @@ class GotoReplaceTransformer(
                                     }
                                     1 -> {
                                         newObject(exceptions.random(), "()V") {}
-                                        throwEx()
+                                        throwException()
                                     }
                                     2 -> {
                                         val labelA = label()
