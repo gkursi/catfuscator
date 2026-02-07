@@ -86,5 +86,5 @@ class ClassHierarchy(private val lookup: (String) -> ClassNode?) {
 }
 
 fun createHierarchy(jar: JarContainer): ClassHierarchy =
-    ClassHierarchy { jar.classes[it] }
+    ClassHierarchy { jar.classes[jar.mappings.get(it) ?: it] }
 

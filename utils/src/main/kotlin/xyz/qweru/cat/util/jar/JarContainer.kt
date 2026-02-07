@@ -1,7 +1,10 @@
 package xyz.qweru.cat.util.jar
 
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.analysis.Analyzer
 import xyz.qweru.cat.util.hierarchy.HierarchyClassWriter
+import xyz.qweru.cat.util.hierarchy.HierarchyVerifier
 import xyz.qweru.cat.util.hierarchy.createHierarchy
 import xyz.qweru.cat.util.mapping.lookup.JarMappingLookup
 import java.util.concurrent.ConcurrentHashMap
@@ -24,4 +27,7 @@ class JarContainer {
 
     fun createClassWriter(flags: Int) =
         HierarchyClassWriter(hierarchy, flags)
+
+    fun createAnalyzer() =
+        Analyzer(HierarchyVerifier(hierarchy))
 }

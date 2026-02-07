@@ -17,9 +17,9 @@ import java.util.zip.ZipEntry
 private val logger = KotlinLogging.logger {}
 
 fun readJar(config: Configuration) = JarFile(config.input).use { jar ->
-    val timer = Timer()
     val parsingOptions = ClassReader.SKIP_FRAMES or if (config.strip) ClassReader.SKIP_DEBUG else 0
     val container = JarContainer()
+    val timer = Timer()
     val parallel = Threads.optional(config.threadAsm)
         { fromCount(jar.size(), config.threadAsmCapacity) }
         .createInvocator()
@@ -68,6 +68,7 @@ fun writeJar(container: JarContainer, config: Configuration) {
             }
 
             node.accept(writer)
+
             bytes["${node.name}.class"] = writer.toByteArray()
             logger.info { "Computed ${node.name}" }
         }

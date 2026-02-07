@@ -67,11 +67,12 @@ class TransformPass(val instructions: InsnList) {
         }
     }
 
-    fun insertBeforeIndexed(predicate: (AbstractInsnNode, Int) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+    fun insertBeforeIndexed(predicate: (AbstractInsnNode, Int) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn, i)) continue
             instructions.insertBefore(insn, listProvider(insn, insns, i))
         }
+        return this
     }
 
     fun insertFirst(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
@@ -82,11 +83,12 @@ class TransformPass(val instructions: InsnList) {
         }
     }
 
-    fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+    fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             instructions.insertBefore(insn, listProvider(insn, insns, i))
         }
+        return this
     }
 
     fun insert(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
@@ -260,6 +262,9 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     operator fun LabelNode.unaryPlus() =
         label(this)
+
+    operator fun InsnList.unaryPlus() =
+        instructions.add(this)
 
     /**
      * @return the index
@@ -439,6 +444,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun jumpIfIntSmaller(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLT, label))
 
     fun jumpIfIntGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPGE, label))
+
+    fun jumpIfIntSmallerEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLE, label))
 
     fun jumpIfLessThan(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFLT, label))
 

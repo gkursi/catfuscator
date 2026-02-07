@@ -13,7 +13,7 @@ class HierarchyVerifier(
 
     override fun isAssignableFrom(type1: Type, type2: Type): Boolean {
         return hierarchy.isAssignableFrom(type2.internalName, type1.internalName).also {
-            logger.warn { "is $type1 assignable from" }
+            logger.warn { "is $type1 assignable from $type2: $it" }
         }
     }
 
