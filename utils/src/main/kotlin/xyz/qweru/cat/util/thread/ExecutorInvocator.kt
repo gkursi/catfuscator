@@ -25,8 +25,9 @@ open class ExecutorInvocator(val executor: ExecutorService) : (() -> Unit) -> Un
             super.invoke {
                 try {
                     t()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     e.printStackTrace(System.err)
+                    System.err.flush()
                     throw e
                 }
             }

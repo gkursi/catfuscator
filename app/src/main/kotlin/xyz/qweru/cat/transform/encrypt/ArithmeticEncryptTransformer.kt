@@ -17,7 +17,7 @@ class ArithmeticEncryptTransformer(
 ) : Transformer("ArithmeticEncrypt", "Encrypt arithmetic ops", target, opts) {
     val simple by value("Simple", "Replace addition/subtraction", true)
     val binary by value("Binary", "Replace binary insns", true)
-    val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", false)
+    val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", true)
 
     init {
         val parallel = createExecutorFrom(opts)

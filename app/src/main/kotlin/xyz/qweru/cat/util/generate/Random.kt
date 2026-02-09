@@ -17,3 +17,7 @@ fun sortedRandomInts(until: Int, size: Int): IntArray {
 fun pickRandom(vararg blocks: () -> Unit) {
     blocks.random()()
 }
+
+fun Random.nextNonZeroInt() =
+    if (nextBoolean()) nextInt(Int.MIN_VALUE, 0)
+    else nextInt(1, Int.MAX_VALUE)

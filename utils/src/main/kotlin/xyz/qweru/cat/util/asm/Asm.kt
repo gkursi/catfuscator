@@ -42,12 +42,12 @@ fun transformMethod(methodNode: MethodNode, configurator: MethodTransformer.() -
 fun versionFromJar(target: JarContainer) =
     target.classes.entries.first().value.version
 
-class MethodTransformer(methodNode: MethodNode) {
+class MethodTransformer(private val methodNode: MethodNode) {
     val instructions: InsnList = methodNode.instructions
-    fun createPass() = TransformPass(instructions)
+    fun createPass() = TransformPass(instructions, methodNode)
 }
 
-class TransformPass(val instructions: InsnList) {
+class TransformPass(val instructions: InsnList, method: MethodNode) {
     var insns: Array<AbstractInsnNode> = instructions.toArray()
 
     /**
@@ -56,6 +56,15 @@ class TransformPass(val instructions: InsnList) {
      */
     fun onlyTake(predicate: (AbstractInsnNode) -> Boolean): TransformPass {
         insns = insns.filter(predicate).toTypedArray()
+        return this
+    }
+
+    fun insertHead(list: InsnList): TransformPass {
+        if (instructions.any()) {
+            instructions.insertBefore(instructions.first, list)
+        } else {
+            instructions.add(list)
+        }
         return this
     }
 
@@ -109,11 +118,12 @@ class TransformPass(val instructions: InsnList) {
         return this
     }
 
-    fun find(predicate: (AbstractInsnNode) -> Boolean, consume: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> Unit) {
+    fun find(predicate: (AbstractInsnNode) -> Boolean, consume: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> Unit): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
             consume(insn, insns, i)
         }
+        return this
     }
 
     class WrapInsnProvider {
@@ -251,8 +261,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
         }
     }
 
-    fun instruction(insn: AbstractInsnNode) = instructions.add(insn)
-    fun instruction(insn: Int) = instructions.add(InsnNode(insn))
+    fun instruction(insn: AbstractInsnNode) = instructions.add(insn).let { insn }
+    fun instruction(insn: Int) = InsnNode(insn).also(instructions::add)
     fun instruction(insnList: InsnList) = instructions.add(insnList)
 
     fun label() = LabelNode(Label())
@@ -326,6 +336,18 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun loadByteFromArray() =
         instruction(Opcodes.BALOAD)
 
+    fun loadIntFromArray() =
+        instruction(Opcodes.IALOAD)
+
+    fun loadLongFromArray() =
+        instruction(Opcodes.LALOAD)
+
+    fun loadFloatFromArray() =
+        instruction(Opcodes.FALOAD)
+
+    fun loadDoubleFromArray() =
+        instruction(Opcodes.DALOAD)
+
     fun storeCharInArray() =
         instruction(Opcodes.CASTORE)
 
@@ -352,6 +374,9 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun returnVoid() =
         instruction(Opcodes.RETURN)
+
+    fun returnInt() =
+        instruction(Opcodes.IRETURN)
 
     fun returnInstance() =
         instruction(Opcodes.ARETURN)
@@ -443,6 +468,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun jumpIfIntSmaller(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLT, label))
 
+    fun jumpIfIntNotEqual(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPNE, label))
+
+    fun jumpIfIntEqual(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPEQ, label))
+
     fun jumpIfIntGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPGE, label))
 
     fun jumpIfIntSmallerEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLE, label))
@@ -495,6 +524,18 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun newByteArray() =
         instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_BYTE))
+
+    fun newIntArray() =
+        instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_INT))
+
+    fun newLongArray() =
+        instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_LONG))
+
+    fun newDoubleArray() =
+        instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_DOUBLE))
+
+    fun newFloatArray() =
+        instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_FLOAT))
 
     fun getStaticField(owner: String, name: String, descriptor: String) =
         field(Opcodes.GETSTATIC, owner, name, descriptor)

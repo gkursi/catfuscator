@@ -3,28 +3,23 @@ package xyz.qweru.cat.transform.encrypt
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
-import xyz.qweru.cat.util.asm.CMethodParameter
-import xyz.qweru.cat.util.asm.InsnBuilder
-import xyz.qweru.cat.util.asm.MethodTransformer
-import xyz.qweru.cat.util.asm.PUBLIC_STATIC
-import xyz.qweru.cat.util.asm.createArrayFromStack
-import xyz.qweru.cat.util.asm.instructionsFor
-import xyz.qweru.cat.util.asm.newClass
-import xyz.qweru.cat.util.asm.transformMethod
-import xyz.qweru.cat.util.asm.versionFromJar
-import xyz.qweru.cat.util.config.Configuration
-import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
+import xyz.qweru.cat.util.asm.*
+import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.generate.MaxLoadPool
+import xyz.qweru.cat.util.generate.stringLength
+import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
+
+// todo: anti pattern: replace insns
 
 class StringEncryptTransformer(
     target: JarContainer,
     opts: Configuration,
 ) : Transformer("StringEncrypt", "Encrypt strings", target, opts) {
     val encryptConst by value("Encrypt Constants", "Encrypt string constants", true)
-    val encryptConcat by value("Encrypt Concat", "Encrypt string concatenation (will slow it down a LOT)", true)
+    val encryptConcat by value("Encrypt Concat", "Encrypt string concatenation (will slow it down)", true)
     val poolLimit by value("String Pool Limit", "Max strings per pool", 4)
 
     private val classPool = MaxLoadPool(poolLimit) {
@@ -104,7 +99,7 @@ class StringEncryptTransformer(
             method(
                 "decrypt",
                 Opcodes.ACC_PUBLIC,
-                "(Ljava/lang/String;I)Ljava/lang/String;",
+                "(Ljava/lang/String;II)Ljava/lang/String;",
                 parameters = listOf(
                     CMethodParameter(
                         ParameterNode("target", Opcodes.ACC_FINAL),
@@ -112,6 +107,10 @@ class StringEncryptTransformer(
                     ),
                     CMethodParameter(
                         ParameterNode("key", Opcodes.ACC_FINAL),
+                        "I"
+                    ),
+                    CMethodParameter(
+                        ParameterNode("nullBytes", Opcodes.ACC_FINAL),
                         "I"
                     )
                 )
@@ -123,6 +122,7 @@ class StringEncryptTransformer(
 
                 val targetString = 1
                 val key = 2
+                val nullBytes = 3
                 val chars = local("chars", "[C", start, end)
                 val length = local("size", "I", start, end)
                 val iterator = local("i", "I", loopSetup, loopContent)
@@ -133,6 +133,13 @@ class StringEncryptTransformer(
                 dup()
                 storeLocalObject(chars)
                 getArraySize()
+                dup()
+                constant0()
+                val elseLabel = label()
+                jumpIfIntNotEqual(elseLabel)
+                ldc("")
+                returnInstance()
+                +elseLabel
                 storeLocalInt(length)
 
                 +loopSetup
@@ -218,7 +225,6 @@ class StringEncryptTransformer(
                 getField(_this, "xorPool0", "J")
                 storeLocalLong(pooledLong)
                 jump(switchEnd)
-
                 +case1
                 loadLocalObject(0)
                 getField(_this, "xorPool1", "J")
@@ -247,6 +253,18 @@ class StringEncryptTransformer(
                     loadLocalObject(0)
                     loadLocalLong(pooledLong)
                     invokeVirtual(_this, "longToBytes", "(J)[B")
+                    val skip = label()
+                    loadLocalInt(stringIter)
+                    loadLocalInt(stringsSize)
+                    constantM1()
+                    addInts()
+                    jumpIfIntNotEqual(skip)
+                    dup()
+                    arrayLength()
+                    loadLocalInt(nullBytes)
+                    subInts()
+                    invokeStatic("java/util/Arrays", "copyOf", "([BI)[B")
+                    +skip
                 }
                 invokeVirtual("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
                 storeLocalObject(stringBuilder)
@@ -415,6 +433,8 @@ class StringEncryptTransformer(
 
         val builder = StringBuilder()
 
+        var nullBytes = (8 - (string.length % 8)) % 8
+
         for ((index, block) in getInBlocks(string).withIndex()) {
             val b = when (index % 4) {
                 0 -> l0
@@ -428,11 +448,18 @@ class StringEncryptTransformer(
             builder.append(a).append(';')
         }
 
+        println("NULLBYTES $nullBytes")
+
         val output = builder.toString()
 
-        loadConstant(xor(output, key))
+        val x = xor(output, key)
+
+        println("final: $x (contains null chr: ${x.contains('\u0000')})")
+
+        loadConstant(x)
         loadConstant(key)
-        invokeVirtual(node.name, "decrypt", "(Ljava/lang/String;I)Ljava/lang/String;")
+        loadConstant(nullBytes)
+        invokeVirtual(node.name, "decrypt", "(Ljava/lang/String;II)Ljava/lang/String;")
     }
 
     private fun getInBlocks(string: String, blockSize: Int = 8) =

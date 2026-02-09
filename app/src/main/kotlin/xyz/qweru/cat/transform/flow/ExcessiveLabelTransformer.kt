@@ -28,7 +28,6 @@ class ExcessiveLabelTransformer(
                 if (!canTarget(entry)) continue
 
                 val klass = entry.value
-                val enum = false
                 val labelLookup = hashMapOf<Label, MutableList<LabelNode>>()
 
                 parallel {

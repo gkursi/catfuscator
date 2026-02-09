@@ -10,9 +10,6 @@ class HierarchyClassWriter(
     flags: Int
 ) : ClassWriter(flags) {
 
-    override fun getCommonSuperClass(type1: String, type2: String): String {
-        return hierarchy.getCommonType(type1, type2).also {
-            logger.warn { "$type1 + $type2 = $it (super = ${super.getCommonSuperClass(type1, type2)})" }
-        }
-    }
+    override fun getCommonSuperClass(type1: String, type2: String) =
+        hierarchy.getCommonType(type1, type2)
 }
