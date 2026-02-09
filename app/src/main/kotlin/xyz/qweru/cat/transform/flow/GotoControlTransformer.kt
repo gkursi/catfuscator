@@ -5,7 +5,8 @@ import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
-import org.objectweb.asm.tree.TableSwitchInsnNode
+import org.objectweb.asm.tree.LdcInsnNode
+import org.objectweb.asm.tree.LookupSwitchInsnNode
 import org.objectweb.asm.tree.analysis.BasicValue
 import org.objectweb.asm.tree.analysis.Frame
 import xyz.qweru.cat.util.config.Configuration
@@ -16,6 +17,7 @@ import xyz.qweru.cat.util.asm.analyseMethod
 import xyz.qweru.cat.util.asm.instructionsFor
 import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
+import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {  }
 
@@ -23,6 +25,9 @@ class GotoControlTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("GotoControl", "Obfuscate goto instructions", target, opts) {
+
+    val shuffle by value("Shuffle", "Shuffle case order", true)
+
     init {
         val parallel = createExecutorFrom(opts)
         target.apply {
@@ -33,38 +38,37 @@ class GotoControlTransformer(
                 parallel {
                     for (method in klass.methods) {
                         transformMethod(method) {
-                            // todo: cache FrameState instead of recomputing for every pass
                             var frames = analyseMethod(klass, method)
                             val controlGroups = hashMapOf<FrameState, FrameControl>()
 
-                            createPass().find({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) { _, _, i ->
+                            createPass().find({ it is JumpInsnNode }) { _, _, i ->
                                 val frame = frames[i] ?: return@find
                                 controlGroups.computeIfAbsent(FrameState.of(frame)) {
                                     FrameControl(LabelNode(Label()))
                                 }
                             }
 
-                            val insns = instructions + instructionsFor(method) {
+                            instructions.add(instructionsFor(method) {
                                 for (group in controlGroups) {
                                     val control = group.value
                                     control.switch = createLookup(control.label)
                                 }
-                            }
+                            })
 
-                            instructions.clear()
-                            insns.forEach(instructions::add)
+                            frames = analyseMethod(klass, method)
 
-                            frames = analyseMethod(klass, method) // todo: ^^
-
-                            createPass().wrap({ it is JumpInsnNode && it.opcode <= Opcodes.GOTO }) {
+                            createPass().wrap({ it is JumpInsnNode }) {
                                 pre = { jmp, _, i ->
                                     instructionsFor(method) {
                                         jmp as JumpInsnNode
                                         val frame = frames[i] ?: return@instructionsFor
                                         val state = FrameState.of(frame)
                                         val control = controlGroups[state]!!
-                                        val labels = control.switch!!.labels
-                                        ldc(labels.size)
+
+                                        val label = jmp.label
+                                        val ldc = ldc(null) as LdcInsnNode
+                                        control.jumps.add(ControlJump(label, ldc))
+
                                         if (jmp.opcode != Opcodes.GOTO) {
 
                                             if (jmp.opcode >= Opcodes.IFEQ && jmp.opcode <= Opcodes.IFLE) {
@@ -75,8 +79,7 @@ class GotoControlTransformer(
 
                                             pop()
                                         }
-                                        labels.add(jmp.label)
-                                        control.switch!!.max++
+
                                         jmp.label = control.label
                                     }
                                 }
@@ -89,6 +92,21 @@ class GotoControlTransformer(
                                     }
                                 }
                             }
+
+                            for (control in controlGroups.values) {
+                                val switch = control.switch!!
+
+                                if (shuffle) {
+                                    control.jumps.shuffle()
+                                }
+
+                                for ((index, jump) in control.jumps.withIndex()) {
+                                    val key = (index + index / control.keyB + 1) * control.keyA
+                                    jump.ldc.cst = key
+                                    switch.keys.add(key)
+                                    switch.labels.add(jump.label)
+                                }
+                            }
                         }
                     }
                 }
@@ -97,13 +115,13 @@ class GotoControlTransformer(
         parallel.await()
     }
 
-    private fun InsnBuilder.createLookup(control: LabelNode): TableSwitchInsnNode {
+    private fun InsnBuilder.createLookup(control: LabelNode): LookupSwitchInsnNode {
         val post = label()
         jump(post)
         ldc(0)
         +control
         val default = label()
-        val table = TableSwitchInsnNode(0, 0, default, default)
+        val table = LookupSwitchInsnNode(default, intArrayOf(), arrayOf())
         instruction(table)
         +default
         newObject("java/lang/Exception", "()V") {}
@@ -112,7 +130,16 @@ class GotoControlTransformer(
         return table
     }
 
-    data class FrameControl(val label: LabelNode, var switch: TableSwitchInsnNode? = null)
+    data class FrameControl(
+        val label: LabelNode,
+        var switch: LookupSwitchInsnNode? = null,
+        val jumps: ArrayList<ControlJump> = arrayListOf()
+    ) {
+        val keyA = Random.nextInt(1, Int.MAX_VALUE / 1000)
+        val keyB = Random.nextInt(1, 5)
+    }
+
+    data class ControlJump(val label: LabelNode, val ldc: LdcInsnNode)
 
     data class FrameState(val locals: Array<String>, val stack: Array<String>) {
 
