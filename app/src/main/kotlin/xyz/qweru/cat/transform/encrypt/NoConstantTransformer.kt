@@ -13,6 +13,7 @@ import xyz.qweru.cat.util.asm.*
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.generate.exactRandomString
 import xyz.qweru.cat.util.generate.nextNonZeroInt
+import xyz.qweru.cat.util.generate.nextNonZeroLong
 import xyz.qweru.cat.util.generate.stringLength
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.thread.createExecutorFrom
@@ -35,8 +36,6 @@ class NoConstantTransformer(
     val arrayFloatingPoint by value("Array Floating Point", "Hide number constants in an array", false)
     val numberGen by value("Number Generation", "Generate number constants in multiple steps", true)
     val genSteps by value("Generation Steps", "Number generation step count (unstable)", 2)
-    val extraChance by value("Extra Chance", "Chance of adding additional steps", 0.025)
-    val extraGenSteps by value("Extra Steps", "Number generation extra step count", 2)
 
     val arrayObjects by value("Array Objects", "Hide strings/types in an object array", true)
 //    ToDo: val stringGen by value("String Generation", "Generate string constants in multiple steps", true)
@@ -160,44 +159,35 @@ class NoConstantTransformer(
             newIntArray()
 
             if (numberGen) {
-                val keys = ArrayDeque<Int>(genSteps)
+                val keys = ArrayList<Int>(genSteps)
 
                 // create steps
                 var keyTotal = 0
-                for (i in 0 until genSteps) {
-                    val nextKey = Random.nextNonZeroInt().also(keys::add)
+
+                repeat(genSteps) {
+                    val nextKey = Random.nextNonZeroInt()
+                        .also(keys::add)
                     keyTotal = keyTotal xor nextKey
                 }
 
                 for ((index, i) in ints.withIndex()) {
-                    ints[index] = i xor keyTotal
+                    dup()
+                    ldc(index)
+                    ldc(i xor keyTotal)
+                    storeIntInArray()
                 }
 
                 while (!keys.isEmpty()) {
-                    if (Random.nextDouble() < extraChance) {
-                        logger.info { "extra steps!!! (${keys.size})" }
-                        var keyTotal = 0
-                        for (i in 0 until extraGenSteps) {
-                            val nextKey = Random.nextNonZeroInt().also(keys::add)
-                            keyTotal = keyTotal xor nextKey
-                        }
-                        for ((index, i) in ints.withIndex()) {
-                            ints[index] = i xor keyTotal
-                        }
-                    } else {
-                        val key = keys.poll()
-                        for ((index, int) in ints.withIndex()) {
-                            val result = int xor key
-                            dup()
-                            dup()
-                            ldc(index)
-                            dup_x1()
-                            loadIntFromArray()
-                            ldc(key)
-                            xorInts()
-                            storeIntInArray()
-                            ints[index] = result
-                        }
+                    val key = keys.removeFirst()
+                    for (index in 0 until ints.size) {
+                        dup()
+                        dup()
+                        ldc(index)
+                        dup_x1()
+                        loadIntFromArray()
+                        ldc(key)
+                        xorInts()
+                        storeIntInArray()
                     }
                 }
             } else {
@@ -211,17 +201,55 @@ class NoConstantTransformer(
 
             storeStaticField(context.klass, intField, "[I")
         }
+
         if (!longs.isEmpty()) {
             ldc(longs.size)
             newLongArray()
-            for ((index, long) in longs.withIndex()) {
-                dup()
-                ldc(index)
-                ldc(long)
-                storeLongInArray()
+
+            if (numberGen) {
+                val keys = ArrayList<Long>(genSteps)
+
+                // create steps
+                var keyTotal = 0L
+
+                repeat(genSteps) {
+                    val nextKey = Random.nextNonZeroLong()
+                        .also(keys::add)
+                    keyTotal = keyTotal xor nextKey
+                }
+
+                for ((index, i) in longs.withIndex()) {
+                    dup()
+                    ldc(index)
+                    ldc(i xor keyTotal)
+                    storeLongInArray()
+                }
+
+                while (!keys.isEmpty()) {
+                    val key = keys.removeFirst()
+                    for (index in 0 until longs.size) {
+                        dup()
+                        dup()
+                        ldc(index)
+                        dup_x1()
+                        loadLongFromArray()
+                        ldc(key)
+                        xorLongs()
+                        storeLongInArray()
+                    }
+                }
+            } else {
+                for ((index, long) in longs.withIndex()) {
+                    dup()
+                    ldc(index)
+                    ldc(long)
+                    storeLongInArray()
+                }
             }
+
             storeStaticField(context.klass, longField, "[J")
         }
+
         if (!floats.isEmpty()) {
             ldc(floats.size)
             newFloatArray()
@@ -233,6 +261,7 @@ class NoConstantTransformer(
             }
             storeStaticField(context.klass, floatField, "[F")
         }
+
         if (!doubles.isEmpty()) {
             ldc(doubles.size)
             newDoubleArray()
@@ -244,6 +273,7 @@ class NoConstantTransformer(
             }
             storeStaticField(context.klass, doubleField, "[D")
         }
+
         if (!objects.isEmpty()) {
             ldc(objects.size)
             newObjectArray("java/lang/Object")

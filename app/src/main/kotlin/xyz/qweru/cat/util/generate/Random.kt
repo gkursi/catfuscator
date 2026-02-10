@@ -21,3 +21,7 @@ fun pickRandom(vararg blocks: () -> Unit) {
 fun Random.nextNonZeroInt() =
     if (nextBoolean()) nextInt(Int.MIN_VALUE, 0)
     else nextInt(1, Int.MAX_VALUE)
+
+fun Random.nextNonZeroLong() =
+    if (nextBoolean()) nextLong(Long.MIN_VALUE, 0)
+    else nextLong(1, Long.MAX_VALUE)

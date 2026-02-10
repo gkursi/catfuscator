@@ -44,24 +44,24 @@ object Main {
     private fun transform(jar: JarContainer, config: Configuration) {
         val timer = Timer()
 
-//        FieldValueDefinitionTransformer(jar, config)
+        ExcessiveLabelTransformer(jar, config)
+        GotoControlTransformer(jar, config)
+        FieldValueDefinitionTransformer(jar, config)
         StringEncryptTransformer(jar, config)
-//        ExcessiveLabelTransformer(jar, config)
-//        GotoControlTransformer(jar, config)
-//        FieldValueDefinitionTransformer(jar, config)
+        FieldValueDefinitionTransformer(jar, config)
 
-//        NumberEncryptTransformer(jar, config)
+        NumberEncryptTransformer(jar, config)
         NoConstantTransformer(jar, config)
 //        MethodCallEncryptTransformer(jar, config)
-//        ArithmeticEncryptTransformer(jar, config)
+        ArithmeticEncryptTransformer(jar, config)
 
-//        ClassRenameTransformer(jar, config)
-//        MethodRenameTransformer(jar, config)
-//        FieldRenameTransformer(jar, config)
-//        LocalFieldRenameTransformer(jar, config)
+        ClassRenameTransformer(jar, config)
+        MethodRenameTransformer(jar, config)
+        FieldRenameTransformer(jar, config)
+        LocalFieldRenameTransformer(jar, config)
 
 //        MethodCallEncryptTransformer.Post(jar, config)
-//        AntiPatternTransformer(jar, config)
+        AntiPatternTransformer(jar, config)
 
         logger.info { "Obfuscation took ${timer.time()}ms" }
     }
