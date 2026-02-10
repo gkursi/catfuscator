@@ -4,6 +4,7 @@ import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
+import org.objectweb.asm.tree.LineNumberNode
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
@@ -20,6 +21,8 @@ class ExcessiveLabelTransformer(
     val secondaryCount by value("Secondary Count", "Amount of extra label per label", 1)
     val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 1)
     val jumpChance by value("Jump Chance", "Chance of jumping", 1)
+    val more by value("More", "Create new labels (unstable-ish)", true)
+    val everyN by value("Every-Nth", "How often should new labels be created (every n instruction)", 5)
 
     init {
         val parallel = createExecutorFrom(opts)
@@ -33,6 +36,14 @@ class ExcessiveLabelTransformer(
                 parallel {
                     for (method in klass.methods) {
                         transformMethod(method) {
+                            if (more) {
+                                createPass().insertBeforeIndexed({ it, i -> it !is LineNumberNode && i % everyN == 0 }) { _, _, _ ->
+                                    instructionsFor(method) {
+                                        +label()
+                                    }
+                                }
+                            }
+
                             createPass().insertBefore({ it is LabelNode }) { ln, _, _ ->
                                 ln as LabelNode
                                 instructionsFor(method) {
