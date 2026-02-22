@@ -39,8 +39,10 @@ private const val mhandles = "java/lang/invoke/MethodHandles"
 private const val mhandlesLookup = $$"$$mhandles$Lookup"
 
 /**
- * todo:  shuffled method args
- * todo:  constructor support(?)
+ * todo:  multiple pools (maybe one per class / per package)
+ *        to avoid clinit being too large
+ * todo:  multiple invoke method variations
+ * todo:  constructor support
  */
 class MethodCallEncryptTransformer(
     target: JarContainer,

@@ -22,7 +22,7 @@ class ExcessiveLabelTransformer(
     val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 1)
     val jumpChance by value("Jump Chance", "Chance of jumping", 1)
     val more by value("More", "Create new labels (unstable-ish)", true)
-    val everyN by value("Every-Nth", "How often should new labels be created (every n instruction)", 5)
+    val everyN by value("Every-Nth", "How often should new labels be created (every n instruction)", 50)
 
     init {
         val parallel = createExecutorFrom(opts)

@@ -20,8 +20,8 @@ fun newClass(
     signature: String = "L$superClass;",
     interfaces: Array<String> = arrayOf(),
     configurator: ClassBuilder.() -> Unit
-): ClassNode {
-    val node = ClassNode()
+): CClassNode {
+    val node = CClassNode()
     node.visit(version, access, name, signature, superClass, interfaces)
 
     val builder = ClassBuilder(node)
@@ -430,6 +430,14 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun shlInts() = instruction(Opcodes.ISHL)
 
+    fun uShrInts() = instruction(Opcodes.IUSHR)
+
+    fun uShrLongs() = instruction(Opcodes.LUSHR)
+
+    fun negInt() = instruction(Opcodes.INEG)
+
+    fun negLong() = instruction(Opcodes.LNEG)
+
     fun shrLongs() = instruction(Opcodes.LSHR)
 
     fun shlLongs() = instruction(Opcodes.LSHL)
@@ -524,6 +532,9 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun newByteArray() =
         instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_BYTE))
+
+    fun newCharArray() =
+        instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_CHAR))
 
     fun newIntArray() =
         instruction(IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_INT))

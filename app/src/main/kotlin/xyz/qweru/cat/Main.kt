@@ -2,11 +2,10 @@ package xyz.qweru.cat
 
 import com.github.ajalt.clikt.core.main
 import io.github.oshai.kotlinlogging.KotlinLogging
-import xyz.qweru.cat.transform.crash.SyntheticMethodTransformer
 import xyz.qweru.cat.transform.encrypt.ArithmeticEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.MethodCallEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.NumberEncryptTransformer
-import xyz.qweru.cat.transform.encrypt.StringEncryptTransformer
+import xyz.qweru.cat.transform.string.StringEncryptTransformer
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.jar.readJar
@@ -52,7 +51,7 @@ object Main {
 
         NumberEncryptTransformer(jar, config)
         NoConstantTransformer(jar, config)
-//        MethodCallEncryptTransformer(jar, config)
+        MethodCallEncryptTransformer(jar, config)
         ArithmeticEncryptTransformer(jar, config)
 
         ClassRenameTransformer(jar, config)
@@ -60,7 +59,7 @@ object Main {
         FieldRenameTransformer(jar, config)
         LocalFieldRenameTransformer(jar, config)
 
-//        MethodCallEncryptTransformer.Post(jar, config)
+        MethodCallEncryptTransformer.Post(jar, config)
         AntiPatternTransformer(jar, config)
 
         logger.info { "Obfuscation took ${timer.time()}ms" }
