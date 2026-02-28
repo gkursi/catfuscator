@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 private val logger = KotlinLogging.logger {  }
 
 private const val invokeDesc = "(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;"
-private const val poolName = "cat/MethodPool"
+private const val poolName = "MethodPool"
 private const val invokeMethod = "call"
 
 private const val clazz = "java/lang/Class"
@@ -65,22 +65,24 @@ class MethodCallEncryptTransformer(
                                 instructionsFor(method) {
                                     invoke as MethodInsnNode
 
+                                    val types = Type.getArgumentTypes(invoke.desc)
                                     val mInvoke = Method(
                                         invoke.owner,
                                         invoke.name,
                                         invoke.desc,
                                         mapTag(invoke.name, invoke.opcode)
                                     )
-                                    val types = Type.getArgumentTypes(invoke.desc)
 
                                     targets.add(mInvoke)
                                     logger.info { "Types ${types.joinToString(",")}" }
 
                                     createArrayFromStack(types)
+
                                     if (mInvoke.isStatic) {
                                         constantNull()
                                         swap()
                                     }
+
                                     ldc(mInvoke.hash())
                                     invokeStatic(poolName, invokeMethod, invokeDesc)
                                     unboxType(Type.getReturnType(invoke.desc))

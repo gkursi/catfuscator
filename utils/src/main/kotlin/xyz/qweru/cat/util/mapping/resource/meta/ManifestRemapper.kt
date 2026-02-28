@@ -16,18 +16,33 @@ object ManifestRemapper : ResourceRemapper {
         val manifest = String(resource.bytes)
         val output = StringBuilder()
         for (line in manifest.lines()) {
-            if (line.startsWith("Main-Class: ")) {
-                val mainClass = line
-                    .substring(12)
-                    .replace(".", "/")
-                val remapped = (mappings.get(mainClass) ?: mainClass)
-                    .replace("/", ".")
-                output.append("Main-Class: ").append(remapped)
-            } else {
-                output.append(line)
+            when {
+                line.startsWith("Main-Class: ") -> {
+                    val mainClass = line
+                        .substring("Main-Class: ".length)
+                        .replace(".", "/")
+                    val remapped = (mappings.get(mainClass) ?: mainClass)
+                        .replace("/", ".")
+                    output.append("Main-Class: ").append(remapped)
+                }
+
+                line.startsWith("Rsrc-Main-Class: ") -> {
+                    val mainClass = line
+                        .substring("Rsrc-Main-Class: ".length)
+                        .replace(".", "/")
+                    val remapped = (mappings.get(mainClass) ?: mainClass)
+                        .replace("/", ".")
+                    output.append("Rsrc-Main-Class: ").append(remapped)
+                }
+
+                else -> {
+                    output.append(line)
+                }
             }
             output.append("\n")
         }
+
+        logger.info { "Manifest:\n$output" }
 
         resource.bytes = output.toString().toByteArray()
     }

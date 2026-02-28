@@ -67,10 +67,9 @@ fun writeJar(container: JarContainer, config: Configuration) {
                 node.sourceFile = null
             }
 
+            logger.info { "Computing ${node.name}" }
             node.accept(writer)
-
             bytes["${node.name}.class"] = writer.toByteArray()
-            logger.info { "Computed ${node.name}" }
         }
     }
 

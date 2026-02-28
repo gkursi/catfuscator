@@ -2,7 +2,7 @@ package xyz.qweru.cat.util.profile
 
 import xyz.qweru.cat.util.math.round
 
-class Timer() {
+class Timer {
     private val startNs: Long = System.nanoTime()
 
     fun time(): Double {

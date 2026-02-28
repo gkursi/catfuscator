@@ -45,6 +45,23 @@ fun versionFromJar(target: JarContainer) =
 class MethodTransformer(private val methodNode: MethodNode) {
     val instructions: InsnList = methodNode.instructions
     fun createPass() = TransformPass(instructions, methodNode)
+    fun createPassWithoutInit(): TransformPass {
+        val pass = createPass()
+
+        if (methodNode.name != "<init>") {
+            return pass
+        }
+
+        var foundInit = false
+        return pass.onlyTake { insn ->
+            if (!foundInit && insn is MethodInsnNode
+                && insn.name == "<init>") {
+                foundInit = true
+            }
+
+            return@onlyTake foundInit
+        }
+    }
 }
 
 class TransformPass(val instructions: InsnList, method: MethodNode) {
@@ -55,7 +72,8 @@ class TransformPass(val instructions: InsnList, method: MethodNode) {
      * from transformations, while keeping them in the original insn list
      */
     fun onlyTake(predicate: (AbstractInsnNode) -> Boolean): TransformPass {
-        insns = insns.filter(predicate).toTypedArray()
+        insns = insns.filter(predicate)
+            .toTypedArray()
         return this
     }
 
@@ -587,7 +605,7 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun checkCast(type: String) =
         instruction(TypeInsnNode(Opcodes.CHECKCAST, type))
 
-    fun logStdout() {
+    fun println() {
         getStaticField("java/lang/System", "out", "Ljava/io/PrintStream;")
         swap()
         invokeVirtual("java/io/PrintStream", "println", "(Ljava/lang/Object;)V")
@@ -687,3 +705,15 @@ val MethodNode.isEnumMethod: Boolean
     get() = isStatic && name.let {
         it == "<clinit>" || it == "values" || it == $$"$values"
     }
+
+val AbstractInsnNode.isTerminal: Boolean
+    get() = opcode == Opcodes.RETURN
+            || opcode == Opcodes.ARETURN
+            || opcode == Opcodes.IRETURN
+            || opcode == Opcodes.DRETURN
+            || opcode == Opcodes.FRETURN
+            || opcode == Opcodes.LRETURN
+            || opcode == Opcodes.GOTO
+            || opcode == Opcodes.TABLESWITCH
+            || opcode == Opcodes.LOOKUPSWITCH
+            || opcode == Opcodes.ATHROW

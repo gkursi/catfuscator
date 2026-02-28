@@ -19,14 +19,13 @@ import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-private val logger = KotlinLogging.logger {  }
-
-class GotoControlTransformer(
+class ControlFlowFlattenTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("GotoControl", "Obfuscate goto instructions", target, opts) {
+) : Transformer("ControlFlowFlatten", "Flatten control flow graphs", target, opts) {
 
     val shuffle by value("Shuffle", "Shuffle case order", true)
+    val onlyEmpty by value("Only Empty", "Only create labels when the stack is empty", false)
 
     init {
         val parallel = createExecutorFrom(opts)
@@ -41,8 +40,13 @@ class GotoControlTransformer(
                             var frames = analyseMethod(klass, method)
                             val controlGroups = hashMapOf<FrameState, FrameControl>()
 
-                            createPass().find({ it is JumpInsnNode }) { _, _, i ->
-                                val frame = frames[i] ?: return@find
+                            createPassWithoutInit().find({ it is JumpInsnNode }) { _, _, i ->
+                                val frame = frames[i]
+
+                                if (frame == null || frame.stackSize > 0 && onlyEmpty) {
+                                    return@find
+                                }
+
                                 controlGroups.computeIfAbsent(FrameState.of(frame)) {
                                     FrameControl(LabelNode(Label()))
                                 }
@@ -57,13 +61,13 @@ class GotoControlTransformer(
 
                             frames = analyseMethod(klass, method)
 
-                            createPass().wrap({ it is JumpInsnNode }) {
+                            createPassWithoutInit().wrap({ it is JumpInsnNode }) {
                                 pre = { jmp, _, i ->
                                     instructionsFor(method) {
                                         jmp as JumpInsnNode
                                         val frame = frames[i] ?: return@instructionsFor
                                         val state = FrameState.of(frame)
-                                        val control = controlGroups[state]!!
+                                        val control = controlGroups[state] ?: return@instructionsFor
 
                                         val label = jmp.label
                                         val ldc = ldc(null) as LdcInsnNode
@@ -85,7 +89,9 @@ class GotoControlTransformer(
                                 }
                                 post = { jmp, _, i ->
                                     instructionsFor(method) {
-                                        if (frames[i] == null || jmp.opcode == Opcodes.GOTO) {
+                                        if (frames[i] == null
+                                            || jmp.opcode == Opcodes.GOTO
+                                            || frames[i]!!.stackSize > 0 && onlyEmpty) {
                                             return@instructionsFor
                                         }
                                         pop()
@@ -124,7 +130,7 @@ class GotoControlTransformer(
         val table = LookupSwitchInsnNode(default, intArrayOf(), arrayOf())
         instruction(table)
         +default
-        newObject("java/lang/Exception", "()V") {}
+        constantNull()
         throwException()
         +post
         return table

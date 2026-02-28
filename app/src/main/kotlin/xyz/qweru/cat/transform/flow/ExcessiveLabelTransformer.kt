@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.LineNumberNode
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
+import xyz.qweru.cat.util.asm.analyseMethod
 import xyz.qweru.cat.util.asm.instructionsFor
 import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
@@ -15,14 +16,15 @@ import kotlin.random.Random
 
 class ExcessiveLabelTransformer(
     target: JarContainer,
-    opts: Configuration
+    opts: Configuration,
 ) : Transformer("TooManyLabels", "Adds a lot of labels, impacts file size a lot", target, opts) {
-    val count by value("Count", "Amount of label per label", 1)
-    val secondaryCount by value("Secondary Count", "Amount of extra label per label", 1)
-    val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 1)
-    val jumpChance by value("Jump Chance", "Chance of jumping", 1)
+    val count by value("Count", "Amount of label per label", 0)
+    val secondaryCount by value("Secondary Count", "Amount of extra label per label", 0)
+    val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 0)
+    val jumpChance by value("Jump Chance", "Chance of jumping", 0)
     val more by value("More", "Create new labels (unstable-ish)", true)
-    val everyN by value("Every-Nth", "How often should new labels be created (every n instruction)", 50)
+    val everyN by value("Every-Nth", "How often should new labels be created (every n instruction)", 2)
+    val onlyEmpty by value("Only Empty", "Only create labels when the stack is empty", true)
 
     init {
         val parallel = createExecutorFrom(opts)
@@ -35,9 +37,14 @@ class ExcessiveLabelTransformer(
 
                 parallel {
                     for (method in klass.methods) {
+                        val frames = analyseMethod(klass, method)
                         transformMethod(method) {
                             if (more) {
-                                createPass().insertBeforeIndexed({ it, i -> it !is LineNumberNode && i % everyN == 0 }) { _, _, _ ->
+                                createPass().insertBeforeIndexed({ it, i ->
+                                    it !is LineNumberNode
+                                            && i % everyN == 0
+                                            && !(onlyEmpty && (frames[i]?.stackSize ?: 1) > 0)
+                                }) { _, _, _ ->
                                     instructionsFor(method) {
                                         +label()
                                     }

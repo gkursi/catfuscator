@@ -15,11 +15,10 @@ import kotlin.random.Random
 class ArithmeticEncryptTransformer(
     target: JarContainer,
     opts: Configuration,
-    h: Boolean = true
 ) : Transformer("ArithmeticEncrypt", "Encrypt arithmetic ops", target, opts) {
     val simple by value("Simple", "Replace addition/subtraction", true)
     val binary by value("Binary", "Replace binary insns", true)
-    val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", h)
+    val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", true)
 
     init {
         val parallel = createExecutorFrom(opts)

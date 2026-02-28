@@ -10,7 +10,7 @@ class ClassRenameTransformer(
     opts: Configuration
 ) : Transformer("ClassRename", "Rename classes", target, opts) {
     private val prefix by value("Prefix", "Renamed class prefix","class")
-    private val preservePackage by value("Keep Package", "Keep original package of class", false)
+    private val preservePackage by value("Keep Package", "Keep original package of class", true)
     private val unicodeCrasher by value("Unicode Crasher", "Appends the null character to crash decompilers", false)
 
     init {

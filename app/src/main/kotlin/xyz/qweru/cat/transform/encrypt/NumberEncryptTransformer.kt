@@ -20,7 +20,7 @@ class NumberEncryptTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("NumberEncrypt", "Encrypts numeric constants", target, opts, ) {
-    val smallConstants by value("Small Constants", "Encrypt small constants (ICONST_*/LCONST_*)", false)
+    val smallConstants by value("Small Constants", "Encrypt small constants (ICONST_*/LCONST_*)", true)
 
     init {
         val parallel = createExecutorFrom(opts)

@@ -14,7 +14,8 @@ import xyz.qweru.cat.util.jar.writeJar
 import xyz.qweru.cat.transform.encrypt.NoConstantTransformer
 import xyz.qweru.cat.transform.fake.AntiPatternTransformer
 import xyz.qweru.cat.transform.flow.ExcessiveLabelTransformer
-import xyz.qweru.cat.transform.flow.GotoControlTransformer
+import xyz.qweru.cat.transform.flow.ControlFlowFlattenTransformer
+import xyz.qweru.cat.transform.flow.ControlFlowTransformer
 import xyz.qweru.cat.transform.process.FieldValueDefinitionTransformer
 import xyz.qweru.cat.transform.rename.ClassRenameTransformer
 import xyz.qweru.cat.transform.rename.FieldRenameTransformer
@@ -43,12 +44,9 @@ object Main {
     private fun transform(jar: JarContainer, config: Configuration) {
         val timer = Timer()
 
-        ExcessiveLabelTransformer(jar, config)
-        GotoControlTransformer(jar, config)
-        FieldValueDefinitionTransformer(jar, config)
+        ControlFlowTransformer(jar, config)
         StringEncryptTransformer(jar, config)
-        FieldValueDefinitionTransformer(jar, config)
-
+        ControlFlowFlattenTransformer(jar, config)
         NumberEncryptTransformer(jar, config)
         NoConstantTransformer(jar, config)
         MethodCallEncryptTransformer(jar, config)
