@@ -13,6 +13,7 @@ import xyz.qweru.cat.util.jar.remapJar
 import xyz.qweru.cat.util.jar.writeJar
 import xyz.qweru.cat.transform.encrypt.NoConstantTransformer
 import xyz.qweru.cat.transform.fake.AntiPatternTransformer
+import xyz.qweru.cat.transform.fake.FakeMethodTransformer
 import xyz.qweru.cat.transform.flow.ExcessiveLabelTransformer
 import xyz.qweru.cat.transform.flow.ControlFlowFlattenTransformer
 import xyz.qweru.cat.transform.flow.ControlFlowTransformer
@@ -44,21 +45,22 @@ object Main {
     private fun transform(jar: JarContainer, config: Configuration) {
         val timer = Timer()
 
+        FakeMethodTransformer(jar, config)
         ControlFlowTransformer(jar, config)
-        StringEncryptTransformer(jar, config)
-        ControlFlowFlattenTransformer(jar, config)
-        NumberEncryptTransformer(jar, config)
-        NoConstantTransformer(jar, config)
-        MethodCallEncryptTransformer(jar, config)
-        ArithmeticEncryptTransformer(jar, config)
+//        ControlFlowFlattenTransformer(jar, config)
+//        StringEncryptTransformer(jar, config)
+//        NumberEncryptTransformer(jar, config)
+//        NoConstantTransformer(jar, config)
+//        MethodCallEncryptTransformer(jar, config)
+//        ArithmeticEncryptTransformer(jar, config)
 
-        ClassRenameTransformer(jar, config)
-        MethodRenameTransformer(jar, config)
-        FieldRenameTransformer(jar, config)
-        LocalFieldRenameTransformer(jar, config)
+//        ClassRenameTransformer(jar, config)
+//        MethodRenameTransformer(jar, config)
+//        FieldRenameTransformer(jar, config)
+//        LocalFieldRenameTransformer(jar, config)
 
-        MethodCallEncryptTransformer.Post(jar, config)
-        AntiPatternTransformer(jar, config)
+//        MethodCallEncryptTransformer.Post(jar, config)
+//        AntiPatternTransformer(jar, config)
 
         logger.info { "Obfuscation took ${timer.time()}ms" }
     }

@@ -110,10 +110,10 @@ class TransformPass(val instructions: InsnList, method: MethodNode) {
         }
     }
 
-    fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList): TransformPass {
+    fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList?): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
-            instructions.insertBefore(insn, listProvider(insn, insns, i))
+            instructions.insertBefore(insn, listProvider(insn, insns, i) ?: continue)
         }
         return this
     }
@@ -243,7 +243,7 @@ fun instructions(localOffset: Int, builder: InsnBuilder.() -> Unit) =
 private val logger = KotlinLogging.logger {}
 
 class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVariableNode>, localOffset: Int) {
-    private var variableIndex = localOffset
+    var variableIndex = localOffset
 
     // do not call `setLabel` with these, asm will explode
     val startLabel = label()
@@ -474,6 +474,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun constant1() = instruction(Opcodes.ICONST_1)
 
+    fun constant2() = instruction(Opcodes.ICONST_2)
+
     fun longConstant0() = instruction(Opcodes.LCONST_0)
 
     fun longConstant1() = instruction(Opcodes.LCONST_1)
@@ -494,6 +496,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun jumpIfIntSmaller(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPLT, label))
 
+    fun jumpIfIntGreater(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPGT, label))
+
     fun jumpIfIntNotEqual(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPNE, label))
 
     fun jumpIfIntEqual(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IF_ICMPEQ, label))
@@ -505,6 +509,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
     fun jumpIfLessThan(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFLT, label))
 
     fun jumpIfGreaterEq(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFGE, label))
+
+    fun jumpIfEquals(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFEQ, label))
+
+    fun jumpIfNotEqual(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFNE, label))
 
     fun jumpIfNonNull(label: LabelNode) = instruction(JumpInsnNode(Opcodes.IFNONNULL, label))
 
@@ -681,7 +689,7 @@ class LookupSwitchBuilder {
 }
 
 fun localVariableOffset(methodNode: MethodNode) =
-    localVariableOffset(methodNode.access and Opcodes.ACC_STATIC == Opcodes.ACC_STATIC, methodNode.desc)
+    localVariableOffset(methodNode.isStatic, methodNode.desc)
 
 fun localVariableOffset(isStatic: Boolean, methodDescriptor: String): Int =
     (Type.getArgumentsAndReturnSizes(methodDescriptor) shr 2) - (if (isStatic) 1 else 0)
@@ -717,3 +725,16 @@ val AbstractInsnNode.isTerminal: Boolean
             || opcode == Opcodes.TABLESWITCH
             || opcode == Opcodes.LOOKUPSWITCH
             || opcode == Opcodes.ATHROW
+
+fun findEdges(pass: TransformPass): Pair<LabelNode, LabelNode> {
+    var startLabel: LabelNode? = null
+    var endLabel: LabelNode? = null
+
+    pass.find({ it is LabelNode }) { label, _, _ ->
+        label as LabelNode
+        startLabel = startLabel ?: label
+        endLabel = label
+    }
+
+    return startLabel!! to endLabel!!
+}

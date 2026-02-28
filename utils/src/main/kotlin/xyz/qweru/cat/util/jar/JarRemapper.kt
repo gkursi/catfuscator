@@ -42,6 +42,7 @@ fun remapJar(container: JarContainer, config: Configuration) = container.apply {
                 remappedNode.desc = method.desc
                 remappedNode.signature = method.signature
                 remappedNode.exceptions = method.exceptions
+                remappedNode.tryCatchBlocks = method.tryCatchBlocks
 
                 method.accept(
                     LocalFieldLookupRemapper(

@@ -1,11 +1,15 @@
 package xyz.qweru.cat.util.asm
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.analysis.Analyzer
+import org.objectweb.asm.tree.analysis.AnalyzerException
 import org.objectweb.asm.tree.analysis.BasicInterpreter
 import org.objectweb.asm.tree.analysis.BasicValue
 import org.objectweb.asm.tree.analysis.Frame
+
+private val logger = KotlinLogging.logger {}
 
 fun analyseMethod(classNode: ClassNode, methodNode: MethodNode): Array<Frame<BasicValue>?> {
     methodNode.maxStack = 65535 // todo: maybe i shouldnt be doing this

@@ -1,6 +1,8 @@
 package xyz.qweru.cat.util.asm
 
 import org.objectweb.asm.Type
+import org.objectweb.asm.tree.analysis.BasicValue
+import org.objectweb.asm.tree.analysis.Frame
 
 /**
  * Leaves the resulting array on the stack
@@ -109,3 +111,28 @@ fun getInvocationTypes(methodDesc: String, owner: String, static: Boolean) =
             Type.getType("L$owner;")
         }) + it
     }
+
+data class FrameState(val locals: Int, val ls: Int) {
+    companion object {
+        fun of(frame: Frame<BasicValue>): FrameState {
+            val sig = arrayListOf<String>()
+
+            for (loc in 0..<frame.locals) {
+                sig += "local " + valueToString(frame.getLocal(loc))
+            }
+
+            for (st in 0..<frame.stackSize) {
+                sig += "stack " + valueToString(frame.getStack(st))
+            }
+
+            return FrameState(sig.hashCode(), sig.size)
+        }
+
+        private fun valueToString(value: BasicValue) =
+            when {
+                value == BasicValue.UNINITIALIZED_VALUE -> "uninitialized"
+                value.type == null -> "top"
+                else -> value.type.descriptor
+            }
+    }
+}

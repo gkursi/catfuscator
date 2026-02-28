@@ -12,6 +12,7 @@ import org.objectweb.asm.tree.analysis.Frame
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
+import xyz.qweru.cat.util.asm.FrameState
 import xyz.qweru.cat.util.asm.InsnBuilder
 import xyz.qweru.cat.util.asm.analyseMethod
 import xyz.qweru.cat.util.asm.instructionsFor
@@ -146,42 +147,4 @@ class ControlFlowFlattenTransformer(
     }
 
     data class ControlJump(val label: LabelNode, val ldc: LdcInsnNode)
-
-    data class FrameState(val locals: Array<String>, val stack: Array<String>) {
-
-        companion object {
-            fun of(frame: Frame<BasicValue>): FrameState {
-                val locals = arrayListOf<String>()
-                val stack = arrayListOf<String>()
-
-                for (loc in 0..<frame.locals) {
-                    locals += frame.getLocal(loc).type?.descriptor ?: "uninitialized"
-                }
-
-                for (st in 0..<frame.stackSize) {
-                    stack += frame.getStack(st).type?.descriptor ?: "uninitialized"
-                }
-
-                return FrameState(locals.toTypedArray(), stack.toTypedArray())
-            }
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as FrameState
-
-            if (!locals.contentEquals(other.locals)) return false
-            if (!stack.contentEquals(other.stack)) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = locals.contentHashCode()
-            result = 31 * result + stack.contentHashCode()
-            return result
-        }
-    }
 }

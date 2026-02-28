@@ -16,6 +16,10 @@ abstract class Transformer(val name: String, val description: String, protected 
 
     val exclusions by _exclusions
 
+    init {
+
+    }
+
     protected fun excludeRegex(string: String) =
         _exclusions.excludeRegex(string)
 
