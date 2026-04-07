@@ -42,8 +42,6 @@ object ManifestRemapper : ResourceRemapper {
             output.append("\n")
         }
 
-        logger.info { "Manifest:\n$output" }
-
         resource.bytes = output.toString().toByteArray()
     }
 }

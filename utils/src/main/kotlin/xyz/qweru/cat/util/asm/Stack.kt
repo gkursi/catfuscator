@@ -112,6 +112,7 @@ fun getInvocationTypes(methodDesc: String, owner: String, static: Boolean) =
         }) + it
     }
 
+@JvmRecord
 data class FrameState(val locals: Int, val ls: Int) {
     companion object {
         fun of(frame: Frame<BasicValue>): FrameState {

@@ -8,33 +8,25 @@ import org.objectweb.asm.tree.analysis.AnalyzerException
 import org.objectweb.asm.tree.analysis.BasicInterpreter
 import org.objectweb.asm.tree.analysis.BasicValue
 import org.objectweb.asm.tree.analysis.Frame
+import xyz.qweru.cat.util.analysis.FastFrameStateAnalyzer
+import xyz.qweru.cat.util.analysis.FastStackSizeAnalyzer
 
 private val logger = KotlinLogging.logger {}
 
+@Deprecated("Use the specialized variants")
 fun analyseMethod(classNode: ClassNode, methodNode: MethodNode): Array<Frame<BasicValue>?> {
-    methodNode.maxStack = 65535 // todo: maybe i shouldnt be doing this
-    methodNode.maxLocals = 65535
+    methodNode.maxStack = 256 // todo: maybe i shouldnt be doing this..
+    methodNode.maxLocals = 256
 
     return Analyzer(BasicInterpreter())
         .analyze(classNode.name, methodNode)
 }
 
-fun Frame<BasicValue>.isSameFrame(other: Frame<BasicValue>): Boolean {
-    if (stackSize != other.stackSize || locals != other.locals) {
-        return false
+fun analyseMethodStackHeight(methodNode: MethodNode): FastStackSizeAnalyzer =
+    FastStackSizeAnalyzer().also {
+        it.analyze(methodNode.instructions)
     }
 
-    for (i in 0..<stackSize) {
-        if(getStack(i).type.descriptor != other.getStack(i).type.descriptor) {
-            return false
-        }
-    }
-
-    for (i in 0..<locals) {
-        if(getLocal(i).type.descriptor != other.getLocal(i).type.descriptor) {
-            return false
-        }
-    }
-
-    return true
-}
+fun analyseMethodStack(methodNode: MethodNode): FastFrameStateAnalyzer =
+    FastFrameStateAnalyzer()
+        .analyze(methodNode.instructions)

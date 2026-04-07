@@ -4,11 +4,16 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
+import xyz.qweru.cat.util.analysis.FastFrameStateAnalyzer
+import xyz.qweru.cat.util.asm.analyseMethod
+import xyz.qweru.cat.util.asm.analyseMethodStack
+import xyz.qweru.cat.util.asm.analyseMethodStackHeight
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.profile.Timer
 import xyz.qweru.cat.util.thread.Threads
 import java.io.File
 import java.io.FileOutputStream
+import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
@@ -58,9 +63,25 @@ fun writeJar(container: JarContainer, config: Configuration) {
     val timer = Timer()
 
     for (entry in container.classes) {
-        parallel {
+//        parallel {
             val writer = container.createClassWriter(ClassWriter.COMPUTE_FRAMES)
             val node = entry.value
+
+            for (methodNode in node.methods) {
+                try {
+                    val a = FastFrameStateAnalyzer()
+
+                    try {
+                        a.cuh = analyseMethod(node, methodNode)
+                    } catch (_: Exception) {}
+
+                    a.analyze(methodNode.instructions)
+                } catch (ex: Exception) {
+                    ex.printStackTrace(System.out)
+                    System.out.flush()
+                    throw ex
+                }
+            }
 
             if (config.strip) {
                 node.sourceDebug = null
@@ -70,7 +91,7 @@ fun writeJar(container: JarContainer, config: Configuration) {
             logger.info { "Computing ${node.name}" }
             node.accept(writer)
             bytes["${node.name}.class"] = writer.toByteArray()
-        }
+//        }
     }
 
     for (resource in container.resources) {

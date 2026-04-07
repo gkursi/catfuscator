@@ -27,17 +27,17 @@ class NoConstantTransformer(
     target: JarContainer,
     opts: Configuration
 ) : Transformer("ConstantHide", "Hides constants", target, opts) {
-    val hideSmallNumbers by value("StrLen Small Numbers", "Hides small numbers as String#length calls", true)
-    val maxNumberLength by value("Max Number Length", "What is considered a small number", 20)
+    val hideSmallNumbers by value("StrLen Small Numbers", "Hides small numbers as String#length calls", false)
+    val maxNumberLength by value("Max Number Length", "What is considered a small number", 5)
     val invisibleEncode by value("Invisible String", "Hide string length", true)
     val encodeNumbers by value("Stringify Numbers", "Encode numbers as strings", false)
     val encodeFloatingPoint by value("Encode Floating Point", "Encode floating-point numbers as bits", true)
     val arrayNumbers by value("Array Numbers", "Hide number constants in an array", true)
     val arrayFloatingPoint by value("Array Floating Point", "Hide number constants in an array", false)
-    val numberGen by value("Number Generation", "Generate number constants in multiple steps", true)
-    val genSteps by value("Generation Steps", "Number generation step count (unstable)", 2)
+    val numberGen by value("Number Generation", "Generate number constants in multiple steps", false)
+    val genSteps by value("Generation Steps", "Number generation step count (unstable)", 0)
 
-    val arrayObjects by value("Array Objects", "Hide strings/types in an object array", true)
+    val arrayObjects by value("Array Objects", "Hide strings/types in an object array", false)
 //    ToDo: val stringGen by value("String Generation", "Generate string constants in multiple steps", true)
 
     val multiPass by value("Multi-pass", "Computes different types in separate passes to allow heavier obfuscation", true)
@@ -265,26 +265,29 @@ class NoConstantTransformer(
         if (!doubles.isEmpty()) {
             ldc(doubles.size)
             newDoubleArray()
+
             for ((index, double) in doubles.withIndex()) {
                 dup()
                 ldc(index)
                 ldc(double)
                 storeDoubleInArray()
             }
+
             storeStaticField(context.klass, doubleField, "[D")
         }
 
         if (!objects.isEmpty()) {
             ldc(objects.size)
             newObjectArray("java/lang/Object")
+
             for ((index, obj) in objects.withIndex()) {
                 dup()
                 ldc(index)
                 ldc(obj)
                 storeObjectInArray()
             }
+
             storeStaticField(context.klass, objField, "[Ljava/lang/Object;")
-            logger.warn { "${objects.size} objects added" }
         }
     }
 

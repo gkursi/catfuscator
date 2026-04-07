@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":utils"))
+    implementation(kotlin("reflect"))
     implementation(libs.bundles.project)
     implementation(libs.bundles.logging)
 }

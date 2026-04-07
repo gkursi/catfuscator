@@ -25,3 +25,9 @@ fun Random.nextNonZeroInt() =
 fun Random.nextNonZeroLong() =
     if (nextBoolean()) nextLong(Long.MIN_VALUE, 0)
     else nextLong(1, Long.MAX_VALUE)
+
+fun <T> MutableCollection<T>.removeRandom(): T {
+    val el = random()
+    remove(el)
+    return el
+}

@@ -9,8 +9,8 @@ import xyz.qweru.cat.util.generate.getJumpTargets
 import xyz.qweru.cat.util.generate.nextNonZeroInt
 import xyz.qweru.cat.util.generate.pickRandom
 import xyz.qweru.cat.util.jar.JarContainer
+import xyz.qweru.cat.util.profile.Timer
 import xyz.qweru.cat.util.thread.createExecutorFrom
-import kotlin.math.max
 import kotlin.random.Random
 
 class ControlFlowTransformer(
@@ -18,16 +18,17 @@ class ControlFlowTransformer(
 ) : Transformer("ControlFlow", "Generic control flow obfuscation", target, opts) {
 
 //    val heavy by value("Heavy", "Heavy flow obfuscation (unstable)", false)
-    val shuffle by value("Block Shuffle", "Shuffles basic blocks (unstable-ish)", true)
-    val globalVT by value("Global Variable Table", "Make every local exist everywhere", true)
+    var shuffle by value("Block Shuffle", "Shuffles basic blocks (unstable-ish)", false)
+    var globalVT by value("Global Variable Table", "Make every local exist everywhere", false)
 
-    val junkFlow by value("Junk Flow", "Add junk control flow", true)
+    var junkFlow by value("Junk Flow", "Add junk control flow", false)
+    val rate by value("Rate", "Will attempt to insert junk flow every N instruction", 1)
     val trappedJump by value("Trapped Jump", "Also adds trapped jumps", false)
     val trappedJumpChance by value("Trap Chance", "Trapped jump chance", 0.05)
-    val maxLocals by value("Max Locals", "Max amount of allowed locals (per type) for junk code", 7)
+    val maxLocals by value("Max Locals", "Max amount of allowed locals (per type) for junk code", 10)
     val localModifyChance by value("Local Modify Chance", "Chance of modifying a local", 0.1)
 
-    init {
+    fun apply() {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {
@@ -48,22 +49,21 @@ class ControlFlowTransformer(
                                 bogusJumps(klass, method)
                             }
 
-                            val blocks = collectBlocks()
-                            instructions.clear()
+                            if (shuffle) {
+                                val blocks = collectBlocks()
+                                instructions.clear()
 
-                            instructions.add(instructionsFor(method) {
-
-                                if (shuffle) {
+                                instructions.add(instructionsFor(method) {
                                     val first = blocks[0].labelNode
                                     blocks.shuffle()
                                     jump(first)
-                                }
 
-                                for ((index, block) in blocks.withIndex()) {
-                                    +block.labelNode
-                                    block.insns.forEach(::instruction)
-                                }
-                            })
+                                    for ((index, block) in blocks.withIndex()) {
+                                        +block.labelNode
+                                        block.insns.forEach(::instruction)
+                                    }
+                                })
+                            }
 
                             if (globalVT) {
                                 globalize(method)
@@ -83,7 +83,7 @@ class ControlFlowTransformer(
             return
         }
 
-        val frames = analyseMethod(klass, method)
+        val frames = analyseMethodStack(method)
         val insns = method.instructions.toArray()
         val (methodStart, methodEnd) = findEdges(createPass())
 
@@ -128,7 +128,7 @@ class ControlFlowTransformer(
 
                     when (strat) {
                         Strategy.INCREASE_MOD -> {
-                            field.data = Random.nextNonZeroInt()
+                            field.data = Random.nextInt(1, Int.MAX_VALUE)
                             value %= field.data
                         }
 
@@ -174,8 +174,15 @@ class ControlFlowTransformer(
                                     dup()
                                     constant2()
                                     mulInts()
+                                    swap()
                                     subInts()
-                                    invokeStatic("java/lang/Math", "abs", "(I)I")
+                                    dup() // i i
+                                    int2Double()
+                                    invokeStatic("java/lang/Math", "signum", "(D)D") // i sign((D)i)
+                                    double2Int()
+                                    swap()
+                                    invokeStatic("java/lang/Math", "abs", "(I)I") // sign(i) abs(i)
+                                    mulInts()
                                 }
                             }
 
@@ -191,10 +198,15 @@ class ControlFlowTransformer(
         }
 
         pass.insertBefore({ true }) { _, _, i ->
+            val frame = frames[i]
+
+            if (frame == -1L) {
+                return@insertBefore null
+            }
+
             val targets = getJumpTargets(
-                FrameState.of(frames[i] ?: return@insertBefore null),
+                frame,
                 method,
-                klass,
                 frames,
                 insns
             )
@@ -225,7 +237,6 @@ class ControlFlowTransformer(
 
                         when (local.strat) {
                             Strategy.CONSTANT -> {
-                                invokeStatic("java/lang/Math", "abs", "(I)I")
                                 pickRandom(
                                     {
                                         if (local.data < 0) {
@@ -267,6 +278,7 @@ class ControlFlowTransformer(
                             }
 
                             Strategy.INCREASE_MOD -> {
+                                invokeStatic("java/lang/Math", "abs", "(I)I")
                                 pickRandom(
                                     {
                                         ldc(Random.nextInt(local.data + 1, Int.MAX_VALUE))

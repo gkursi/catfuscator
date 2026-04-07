@@ -9,6 +9,7 @@ import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.asm.analyseMethod
+import xyz.qweru.cat.util.asm.analyseMethodStackHeight
 import xyz.qweru.cat.util.asm.instructionsFor
 import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
@@ -37,13 +38,13 @@ class ExcessiveLabelTransformer(
 
                 parallel {
                     for (method in klass.methods) {
-                        val frames = analyseMethod(klass, method)
+                        val frames = analyseMethodStackHeight(method)
                         transformMethod(method) {
                             if (more) {
                                 createPass().insertBeforeIndexed({ it, i ->
                                     it !is LineNumberNode
                                             && i % everyN == 0
-                                            && !(onlyEmpty && (frames[i]?.stackSize ?: 1) > 0)
+                                            && !(onlyEmpty && frames[i] > 0)
                                 }) { _, _, _ ->
                                     instructionsFor(method) {
                                         +label()

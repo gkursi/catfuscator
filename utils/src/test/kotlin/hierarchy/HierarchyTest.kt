@@ -1,19 +1,8 @@
 package hierarchy
 
-import hierarchy.classes.ClassA
-import hierarchy.classes.ClassB
-import hierarchy.classes.ClassC
-import hierarchy.classes.ClassD
-import hierarchy.classes.ClassE
-import hierarchy.classes.ClassF
-import hierarchy.classes.ExceptionClassA
-import hierarchy.classes.InterfaceA
-import hierarchy.classes.InterfaceB
-import org.objectweb.asm.ClassWriter
+import hierarchy.classes.*
 import xyz.qweru.cat.util.hierarchy.createHierarchy
 import xyz.qweru.cat.util.hierarchy.jreHierarchy
-import java.util.ArrayList
-import java.util.LinkedList
 import kotlin.test.Test
 
 open class HierarchyTest {

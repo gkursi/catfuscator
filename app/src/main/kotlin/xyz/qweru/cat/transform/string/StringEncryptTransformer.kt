@@ -20,7 +20,7 @@ class StringEncryptTransformer(
 ) : Transformer("StringEncrypt", "Encrypt strings", target, opts) {
     val encryptConst by value("Encrypt Constants", "Encrypt string constants", true)
     val encryptConcat by value("Encrypt Concat", "Encrypt string concatenation (will slow it down)", true)
-    val stringLimit by value("Class Limit", "Max strings per generated class", 4)
+    val stringLimit by value("Class Limit", "Max strings per generated class", 10)
     val intern by value("Intern", "Interns strings for slightly better performance", true)
 
     val keyPool by value("Key Pool", "XOR key pool", true)

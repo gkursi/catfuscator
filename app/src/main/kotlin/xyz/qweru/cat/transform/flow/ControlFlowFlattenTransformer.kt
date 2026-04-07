@@ -1,22 +1,15 @@
 package xyz.qweru.cat.transform.flow
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
 import org.objectweb.asm.tree.LdcInsnNode
 import org.objectweb.asm.tree.LookupSwitchInsnNode
-import org.objectweb.asm.tree.analysis.BasicValue
-import org.objectweb.asm.tree.analysis.Frame
+import xyz.qweru.cat.transform.Transformer
+import xyz.qweru.cat.util.asm.*
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
-import xyz.qweru.cat.transform.Transformer
-import xyz.qweru.cat.util.asm.FrameState
-import xyz.qweru.cat.util.asm.InsnBuilder
-import xyz.qweru.cat.util.asm.analyseMethod
-import xyz.qweru.cat.util.asm.instructionsFor
-import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
@@ -38,18 +31,20 @@ class ControlFlowFlattenTransformer(
                 parallel {
                     for (method in klass.methods) {
                         transformMethod(method) {
-                            var frames = analyseMethod(klass, method)
-                            val controlGroups = hashMapOf<FrameState, FrameControl>()
+                            var frames = analyseMethodStack(method)
+                            var frameHeight = analyseMethodStackHeight(method)
+                            val controlGroups = hashMapOf<Long, ControlNode>()
 
                             createPassWithoutInit().find({ it is JumpInsnNode }) { _, _, i ->
                                 val frame = frames[i]
+                                val height = frameHeight[i]
 
-                                if (frame == null || frame.stackSize > 0 && onlyEmpty) {
+                                if (height == -1 || height > 0 && onlyEmpty) {
                                     return@find
                                 }
 
-                                controlGroups.computeIfAbsent(FrameState.of(frame)) {
-                                    FrameControl(LabelNode(Label()))
+                                controlGroups.computeIfAbsent(frame) {
+                                    ControlNode(LabelNode(Label()))
                                 }
                             }
 
@@ -60,22 +55,23 @@ class ControlFlowFlattenTransformer(
                                 }
                             })
 
-                            frames = analyseMethod(klass, method)
+                            frames = analyseMethodStack(method)
+                            frameHeight = analyseMethodStackHeight(method)
 
                             createPassWithoutInit().wrap({ it is JumpInsnNode }) {
                                 pre = { jmp, _, i ->
                                     instructionsFor(method) {
                                         jmp as JumpInsnNode
-                                        val frame = frames[i] ?: return@instructionsFor
-                                        val state = FrameState.of(frame)
-                                        val control = controlGroups[state] ?: return@instructionsFor
+
+                                        val frame = frames[i]
+                                        val control = controlGroups[frame]
+                                            ?: return@instructionsFor
 
                                         val label = jmp.label
                                         val ldc = ldc(null) as LdcInsnNode
                                         control.jumps.add(ControlJump(label, ldc))
 
                                         if (jmp.opcode != Opcodes.GOTO) {
-
                                             if (jmp.opcode >= Opcodes.IFEQ && jmp.opcode <= Opcodes.IFLE) {
                                                 dup_x1()
                                             } else {
@@ -90,11 +86,12 @@ class ControlFlowFlattenTransformer(
                                 }
                                 post = { jmp, _, i ->
                                     instructionsFor(method) {
-                                        if (frames[i] == null
+                                        if (frameHeight[i] == -1
                                             || jmp.opcode == Opcodes.GOTO
-                                            || frames[i]!!.stackSize > 0 && onlyEmpty) {
+                                            || frameHeight[i] > 0 && onlyEmpty) {
                                             return@instructionsFor
                                         }
+
                                         pop()
                                     }
                                 }
@@ -137,7 +134,7 @@ class ControlFlowFlattenTransformer(
         return table
     }
 
-    data class FrameControl(
+    data class ControlNode(
         val label: LabelNode,
         var switch: LookupSwitchInsnNode? = null,
         val jumps: ArrayList<ControlJump> = arrayListOf()

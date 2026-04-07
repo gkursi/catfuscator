@@ -1,11 +1,14 @@
 package xyz.qweru.cat.transform
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import xyz.qweru.cat.config.ConfigValue
 import xyz.qweru.cat.config.ExcludeConfigValue
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
+
+private val logger = KotlinLogging.logger {  }
 
 abstract class Transformer(val name: String, val description: String, protected val target: JarContainer, protected val opts: Configuration) {
     private val _exclusions = ExcludeConfigValue(
@@ -17,7 +20,7 @@ abstract class Transformer(val name: String, val description: String, protected 
     val exclusions by _exclusions
 
     init {
-
+        logger.info { "Applying ${this.javaClass.simpleName}" }
     }
 
     protected fun excludeRegex(string: String) =

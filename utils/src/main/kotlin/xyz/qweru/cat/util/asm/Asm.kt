@@ -74,6 +74,7 @@ class TransformPass(val instructions: InsnList, method: MethodNode) {
     fun onlyTake(predicate: (AbstractInsnNode) -> Boolean): TransformPass {
         insns = insns.filter(predicate)
             .toTypedArray()
+
         return this
     }
 
@@ -83,62 +84,108 @@ class TransformPass(val instructions: InsnList, method: MethodNode) {
         } else {
             instructions.add(list)
         }
+
         return this
     }
 
     fun replace(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
+
             instructions.insert(insn, listProvider(insn, insns, i))
             instructions.remove(insn)
         }
     }
 
-    fun insertBeforeIndexed(predicate: (AbstractInsnNode, Int) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList): TransformPass {
+    fun remove(predicate: (AbstractInsnNode) -> Boolean): TransformPass {
         for ((i, insn) in insns.withIndex()) {
-            if (!predicate.invoke(insn, i)) continue
-            instructions.insertBefore(insn, listProvider(insn, insns, i))
+            if (!predicate.invoke(insn)) continue
+
+            instructions.remove(insn)
         }
+
         return this
     }
 
-    fun insertFirst(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
+    fun insertBeforeIndexed(predicate: (AbstractInsnNode, Int) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList?): TransformPass {
+        for ((i, insn) in insns.withIndex()) {
+            if (!predicate.invoke(insn, i)) continue
+
+            instructions.insertBefore(
+                insn,
+                listProvider(insn, insns, i)
+                    ?: continue
+            )
+        }
+
+        return this
+    }
+
+    fun insertFirst(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
-            instructions.insert(insn, listProvider(insn, insns, i))
-            return
+
+            instructions.insert(
+                insn,
+                listProvider(insn, insns, i)
+            )
+
+            break
         }
+
+        return this
     }
 
     fun insertBefore(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList?): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
-            instructions.insertBefore(insn, listProvider(insn, insns, i) ?: continue)
+
+            instructions.insertBefore(
+                insn,
+                listProvider(insn, insns, i)
+                    ?: continue
+            )
         }
+
         return this
     }
 
     fun insert(predicate: (AbstractInsnNode) -> Boolean, listProvider: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> InsnList) {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
-            instructions.insert(insn, listProvider(insn, insns, i))
+
+            instructions.insert(
+                insn,
+                listProvider(insn, insns, i)
+            )
         }
     }
 
     fun wrap(predicate: (AbstractInsnNode) -> Boolean, configure: WrapInsnProvider.() -> Unit): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
+
             val provider = WrapInsnProvider()
             provider.configure()
-            instructions.insertBefore(insn, provider.pre(insn, insns, i))
-            instructions.insert(insn, provider.post(insn, insns, i))
+
+            instructions.insertBefore(
+                insn,
+                provider.pre(insn, insns, i)
+            )
+
+            instructions.insert(
+                insn,
+                provider.post(insn, insns, i)
+            )
         }
+
         return this
     }
 
     fun find(predicate: (AbstractInsnNode) -> Boolean, consume: (AbstractInsnNode, Array<AbstractInsnNode>, Int) -> Unit): TransformPass {
         for ((i, insn) in insns.withIndex()) {
             if (!predicate.invoke(insn)) continue
+
             consume(insn, insns, i)
         }
         return this
@@ -232,7 +279,7 @@ class ClassBuilder(val classNode: ClassNode) {
 fun instructionsFor(methodNode: MethodNode, builder: InsnBuilder.() -> Unit) =
     instructions(localVariableOffset(methodNode), builder)
 
-fun instructions(localOffset: Int, builder: InsnBuilder.() -> Unit) =
+fun instructions(localOffset: Int = 0, builder: InsnBuilder.() -> Unit) =
     InsnBuilder(InsnList(), arrayListOf(), localOffset)
         .apply {
             builder()
@@ -466,6 +513,10 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun int2Byte() = instruction(Opcodes.I2B)
 
+    fun int2Double() = instruction(Opcodes.I2D)
+
+    fun double2Int() = instruction(Opcodes.D2I)
+
     fun int2Long() = instruction(Opcodes.I2L)
 
     fun constantNull() = instruction(Opcodes.ACONST_NULL)
@@ -522,10 +573,14 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
 
     fun compareLongs() = instruction(Opcodes.LCMP)
 
+    fun compareDoubles() = instruction(Opcodes.DCMPG)
+
+    fun compareFloats() = instruction(Opcodes.FCMPG)
+
     fun tableSwitch(min: Int, max: Int, default: LabelNode, vararg labels: LabelNode) =
         instruction(TableSwitchInsnNode(min, max, default, *labels))
 
-    fun lookupSwitchBuilder(configure: LookupSwitchBuilder.() -> Unit) {
+    fun lookupSwitch(configure: LookupSwitchBuilder.() -> Unit) {
         val builder = LookupSwitchBuilder()
         builder.apply { startInsn() }
         builder.configure()
@@ -544,6 +599,8 @@ class InsnBuilder(val instructions: InsnList, val locals: MutableList<LocalVaria
         instruction(LdcInsnNode(value))
 
     fun ldc(value: Any?) = loadConstant(value)
+
+    fun nop() = instruction(Opcodes.NOP)
 
     fun newObject(type: String, descriptor: String, pushArgs: () -> Unit) {
         instruction(TypeInsnNode(Opcodes.NEW, type))
