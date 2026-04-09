@@ -4,12 +4,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.analysis.Analyzer
-import org.objectweb.asm.tree.analysis.AnalyzerException
 import org.objectweb.asm.tree.analysis.BasicInterpreter
 import org.objectweb.asm.tree.analysis.BasicValue
 import org.objectweb.asm.tree.analysis.Frame
-import xyz.qweru.cat.util.analysis.FastFrameStateAnalyzer
-import xyz.qweru.cat.util.analysis.FastStackSizeAnalyzer
+import xyz.qweru.cat.util.analysis.FrameStateAnalyzer
+import xyz.qweru.cat.util.analysis.StackSizeAnalyzer
 
 private val logger = KotlinLogging.logger {}
 
@@ -22,11 +21,11 @@ fun analyseMethod(classNode: ClassNode, methodNode: MethodNode): Array<Frame<Bas
         .analyze(classNode.name, methodNode)
 }
 
-fun analyseMethodStackHeight(methodNode: MethodNode): FastStackSizeAnalyzer =
-    FastStackSizeAnalyzer().also {
+fun analyseMethodStackHeight(methodNode: MethodNode): StackSizeAnalyzer =
+    StackSizeAnalyzer().also {
         it.analyze(methodNode.instructions)
     }
 
-fun analyseMethodStack(methodNode: MethodNode): FastFrameStateAnalyzer =
-    FastFrameStateAnalyzer()
+fun analyseMethodStack(methodNode: MethodNode): FrameStateAnalyzer =
+    FrameStateAnalyzer()
         .analyze(methodNode.instructions)

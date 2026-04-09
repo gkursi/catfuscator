@@ -8,8 +8,7 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.infra.Blackhole
-import xyz.qweru.cat.util.analysis.FastFrameStateAnalyzer
-import xyz.qweru.cat.util.analysis.FastStackSizeAnalyzer
+import xyz.qweru.cat.util.analysis.FrameStateAnalyzer
 import xyz.qweru.cat.util.asm.ClassBuilder
 import xyz.qweru.cat.util.asm.PUBLIC_STATIC
 import xyz.qweru.cat.util.asm.analyseMethod
@@ -61,7 +60,7 @@ open class StackHeightAnalysisBenchmarkB {
     @Benchmark
     fun fastBench(bh: Blackhole) {
         bh.consume(
-            FastFrameStateAnalyzer()
+            FrameStateAnalyzer()
                 .analyze(method.instructions)
         )
     }

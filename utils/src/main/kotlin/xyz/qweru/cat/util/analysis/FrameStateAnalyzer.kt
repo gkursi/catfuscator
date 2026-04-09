@@ -9,24 +9,22 @@ import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 import org.objectweb.asm.tree.analysis.BasicValue
 import org.objectweb.asm.tree.analysis.Frame
-import xyz.qweru.cat.util.asm.analyseMethod
-import xyz.qweru.cat.util.asm.analyseMethodStackHeight
 import xyz.qweru.cat.util.collection.IntStack
 import xyz.qweru.cat.util.math.XXH3
 
 /**
  * Fast stack analysis.
- * Longs and doubles are represented with 2 slots.
  * O(mn + kn) time complexity (m - instruction count, n - fork count, k - max stack size).
  * O(m + kn) space complexity.
  * <p>
+ *
  * ToDo: rewrite without recursion
  *
  * @param verify basic stack verification
  */
-class FastFrameStateAnalyzer(val verify: Boolean = false) : Iterable<Long> {
+class FrameStateAnalyzer(val verify: Boolean = false) : Iterable<Long> {
     internal lateinit var array: LongArray
-    internal lateinit var height: FastStackSizeAnalyzer
+    internal lateinit var height: StackSizeAnalyzer
     internal var cuh: Array<Frame<BasicValue>?>? = null
 
     internal val map by lazy {
@@ -40,9 +38,9 @@ class FastFrameStateAnalyzer(val verify: Boolean = false) : Iterable<Long> {
         map
     }
 
-    fun analyze(insns: InsnList): FastFrameStateAnalyzer {
+    fun analyze(insns: InsnList): FrameStateAnalyzer {
         array = LongArray(insns.size()) { -1 }
-        height = FastStackSizeAnalyzer().apply { analyze(insns);  }
+        height = StackSizeAnalyzer().apply { analyze(insns);  }
 
         fork(
             insns,

@@ -9,7 +9,6 @@ import xyz.qweru.cat.util.generate.getJumpTargets
 import xyz.qweru.cat.util.generate.nextNonZeroInt
 import xyz.qweru.cat.util.generate.pickRandom
 import xyz.qweru.cat.util.jar.JarContainer
-import xyz.qweru.cat.util.profile.Timer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
@@ -22,7 +21,6 @@ class ControlFlowTransformer(
     var globalVT by value("Global Variable Table", "Make every local exist everywhere", false)
 
     var junkFlow by value("Junk Flow", "Add junk control flow", false)
-    val rate by value("Rate", "Will attempt to insert junk flow every N instruction", 1)
     val trappedJump by value("Trapped Jump", "Also adds trapped jumps", false)
     val trappedJumpChance by value("Trap Chance", "Trapped jump chance", 0.05)
     val maxLocals by value("Max Locals", "Max amount of allowed locals (per type) for junk code", 10)
@@ -85,7 +83,7 @@ class ControlFlowTransformer(
 
         val frames = analyseMethodStack(method)
         val insns = method.instructions.toArray()
-        val (methodStart, methodEnd) = findEdges(createPass())
+        val (methodStart, methodEnd) = findEdgeLabels(createPass())
 
         val intLocals = Array(Random.nextInt(
             1,
@@ -309,7 +307,7 @@ class ControlFlowTransformer(
 
     private fun MethodTransformer.globalize(method: MethodNode) {
         val pass = createPass()
-        val (startLabel, endLabel) = findEdges(pass)
+        val (startLabel, endLabel) = findEdgeLabels(pass)
 
         var index = if (method.isStatic) 0 else 1
         val locals = method.localVariables

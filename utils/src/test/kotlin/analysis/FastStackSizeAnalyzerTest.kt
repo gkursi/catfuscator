@@ -1,7 +1,7 @@
 package analysis
 
 import org.objectweb.asm.tree.ClassNode
-import xyz.qweru.cat.util.analysis.FastStackSizeAnalyzer
+import xyz.qweru.cat.util.analysis.StackSizeAnalyzer
 import xyz.qweru.cat.util.asm.ClassBuilder
 import xyz.qweru.cat.util.asm.PUBLIC_STATIC
 import xyz.qweru.cat.util.asm.analyseMethod
@@ -11,7 +11,7 @@ import kotlin.test.Test
 class FastStackSizeAnalyzerTest {
     @Test
     fun noForkTest() {
-        val stack = FastStackSizeAnalyzer()
+        val stack = StackSizeAnalyzer()
         val insns = instructions {
             constant1()
             longConstant1()
@@ -25,7 +25,7 @@ class FastStackSizeAnalyzerTest {
 
     @Test
     fun forkTest() {
-        val stack = FastStackSizeAnalyzer()
+        val stack = StackSizeAnalyzer()
         val insns = instructions {
             val label = label()
             constant1() // s=1
@@ -74,7 +74,7 @@ class FastStackSizeAnalyzerTest {
 
         val method = cl.methods[0]
         val frames = analyseMethod(cl, method)
-        val stack = FastStackSizeAnalyzer()
+        val stack = StackSizeAnalyzer()
             .also { it.analyze(method.instructions) }
 
         for ((i, frame) in frames.withIndex()) {

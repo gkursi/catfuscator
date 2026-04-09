@@ -39,7 +39,7 @@ object Main {
         val jar = readJar(config)
 
         transform(jar, config)
-        remapJar(jar, config)
+//        remapJar(jar, config)
 
         logger.info { "Output: ${config.output}" }
         writeJar(jar, config)
@@ -49,33 +49,33 @@ object Main {
         val timer = Timer()
 
         LineNumberTransformer(jar, config)
-        FakeMethodTransformer(jar, config)
-        FieldValueDefinitionTransformer(jar, config)
+//        FakeMethodTransformer(jar, config)
+//        FieldValueDefinitionTransformer(jar, config)
 //
-        BlockAnalysisTransformer(jar, config)
+//        BlockAnalysisTransformer(jar, config)
 //        ExcessiveLabelTransformer(jar, config)
         ControlFlowTransformer(jar, config).apply {
             globalVT = true
             shuffle = false
-            junkFlow = true
+            junkFlow = false
             apply()
         }
         PolymorphicFlowTransformer(jar, config)
-        ControlFlowFlattenTransformer(jar, config)
-
-        StringEncryptTransformer(jar, config)
-        NumberEncryptTransformer(jar, config)
-        NoConstantTransformer(jar, config)
-        MethodCallEncryptTransformer(jar, config)
-        ArithmeticEncryptTransformer(jar, config)
-
-        ClassRenameTransformer(jar, config)
-        MethodRenameTransformer(jar, config)
-        FieldRenameTransformer(jar, config)
-        LocalFieldRenameTransformer(jar, config)
-
-        MethodCallEncryptTransformer.Post(jar, config)
-        AntiPatternTransformer(jar, config)
+//        ControlFlowFlattenTransformer(jar, config)
+//
+//        StringEncryptTransformer(jar, config)
+//        NumberEncryptTransformer(jar, config)
+//        NoConstantTransformer(jar, config)
+//        MethodCallEncryptTransformer(jar, config)
+//        ArithmeticEncryptTransformer(jar, config)
+//
+//        ClassRenameTransformer(jar, config)
+//        MethodRenameTransformer(jar, config)
+//        FieldRenameTransformer(jar, config)
+//        LocalFieldRenameTransformer(jar, config)
+//
+//        MethodCallEncryptTransformer.Post(jar, config)
+//        AntiPatternTransformer(jar, config)
 
         logger.info { "Obfuscation took ${timer.time()}ms" }
     }

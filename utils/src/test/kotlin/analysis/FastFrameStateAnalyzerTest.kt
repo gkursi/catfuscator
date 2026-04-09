@@ -1,6 +1,6 @@
 package analysis
 
-import xyz.qweru.cat.util.analysis.FastFrameStateAnalyzer
+import xyz.qweru.cat.util.analysis.FrameStateAnalyzer
 import xyz.qweru.cat.util.asm.instructions
 import kotlin.test.Test
 
@@ -22,7 +22,7 @@ class FastFrameStateAnalyzerTest {
             // label()
         }
 
-        val frames = FastFrameStateAnalyzer()
+        val frames = FrameStateAnalyzer()
             .analyze(insns)
         val groups = frames.group()
 
@@ -46,7 +46,7 @@ class FastFrameStateAnalyzerTest {
             returnVoid()
         }
 
-        val frames = FastFrameStateAnalyzer()
+        val frames = FrameStateAnalyzer()
             .analyze(insns)
     }
 

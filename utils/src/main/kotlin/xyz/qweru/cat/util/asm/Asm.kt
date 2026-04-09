@@ -8,6 +8,7 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 import xyz.qweru.cat.util.ASM
+import xyz.qweru.cat.util.collection.LiteralMap
 import xyz.qweru.cat.util.jar.JarContainer
 
 const val PUBLIC_STATIC = Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC
@@ -783,7 +784,7 @@ val AbstractInsnNode.isTerminal: Boolean
             || opcode == Opcodes.LOOKUPSWITCH
             || opcode == Opcodes.ATHROW
 
-fun findEdges(pass: TransformPass): Pair<LabelNode, LabelNode> {
+fun findEdgeLabels(pass: TransformPass): Pair<LabelNode, LabelNode> {
     var startLabel: LabelNode? = null
     var endLabel: LabelNode? = null
 
@@ -794,4 +795,38 @@ fun findEdges(pass: TransformPass): Pair<LabelNode, LabelNode> {
     }
 
     return startLabel!! to endLabel!!
+}
+
+/**
+ * Create exact duplicates of all instructions
+ * except for the given type of instructions
+ */
+inline fun <reified T : AbstractInsnNode> Collection<AbstractInsnNode>.cloneExactExcept(
+    exceptions: Map<T, T>
+): ArrayList<AbstractInsnNode> {
+    val array = arrayListOf<AbstractInsnNode>()
+    val map = LiteralMap<LabelNode>()
+
+    for (ins in this) {
+        array.add(
+            if (ins is T) {
+                exceptions[ins]!!
+            } else {
+                ins.clone(map)
+            }
+        )
+    }
+
+    return array
+}
+
+fun Collection<AbstractInsnNode>.cloneExact(): ArrayList<AbstractInsnNode> {
+    val array = arrayListOf<AbstractInsnNode>()
+    val map = LiteralMap<LabelNode>()
+
+    for (ins in this) {
+        array.add(ins.clone(map))
+    }
+
+    return array
 }

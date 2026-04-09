@@ -1,20 +1,5 @@
 package analysis
 
-import org.objectweb.asm.tree.ClassNode
-import org.objectweb.asm.tree.MethodNode
-import org.openjdk.jmh.annotations.Benchmark
-import org.openjdk.jmh.annotations.Measurement
-import org.openjdk.jmh.annotations.Scope
-import org.openjdk.jmh.annotations.Setup
-import org.openjdk.jmh.annotations.State
-import org.openjdk.jmh.infra.Blackhole
-import xyz.qweru.cat.util.analysis.FastFrameStateAnalyzer
-import xyz.qweru.cat.util.analysis.FastStackSizeAnalyzer
-import xyz.qweru.cat.util.asm.ClassBuilder
-import xyz.qweru.cat.util.asm.PUBLIC_STATIC
-import xyz.qweru.cat.util.asm.analyseMethod
-import java.util.concurrent.TimeUnit
-
 //@Measurement(timeUnit = TimeUnit.NANOSECONDS)
 //@State(Scope.Benchmark)
 //open class StackHeightAnalysisBenchmarkA {
