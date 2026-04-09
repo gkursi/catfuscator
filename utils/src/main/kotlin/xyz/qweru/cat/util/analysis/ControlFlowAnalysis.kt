@@ -202,11 +202,20 @@ inline fun Block.forEachEdge(consume: (Edge, Block) -> Unit) {
         val target = when (next) {
             is Edge.Jump -> next.target
             is Edge.Fallthrough -> next.to
+
+            is Edge.Switch -> {
+                next.values.forEach {
+                    remaining.addAll(it.target.endpoints)
+                    consume(next, it.target)
+                }
+
+                continue
+            }
+
             else -> throw IllegalStateException("MethodEntry in endpoints")
         }
 
         remaining.addAll(target.endpoints)
-
         consume(next, target)
     }
 }

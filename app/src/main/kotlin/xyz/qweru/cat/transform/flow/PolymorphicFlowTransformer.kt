@@ -6,6 +6,8 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
+import org.objectweb.asm.tree.LookupSwitchInsnNode
+import org.objectweb.asm.tree.TableSwitchInsnNode
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.analysis.Block
 import xyz.qweru.cat.util.analysis.Edge
@@ -89,13 +91,52 @@ class PolymorphicFlowTransformer(
     ): HashSet<Block> {
         insns.add(block.label)
 
+        fun process(block: Block) {
+            if (visited.contains(block)) {
+                return
+            }
+
+            visited.add(block)
+            createBlock(insns, block, visited, jumble)
+        }
+
         for (node in block.instructions) {
             val newNode = when (node) {
                 is Edge.Jump -> {
                     JumpInsnNode(node.op, node.target.label)
                 }
+
                 is Edge.Fallthrough ->
                     JumpInsnNode(Opcodes.GOTO, node.to.label)
+
+                is Edge.Switch ->
+                    if (node.op == Opcodes.TABLESWITCH) {
+                        TableSwitchInsnNode(
+                            node.keys.first(),
+                            node.keys.last(),
+                            node.values.last().target.label
+                        ).also {
+                            val values = node.values.toMutableList()
+                            values.removeLast() // default
+
+                            it.labels = values.map { jmp ->
+                                jmp.target.label
+                            }
+                        }
+                    } else {
+                        LookupSwitchInsnNode(
+                            node.values.last().target.label,
+                            intArrayOf(),
+                            emptyArray()
+                        ).also {
+                            val values = node.values.toMutableList()
+                            values.removeLast() // default
+
+                            it.keys = node.keys
+                            it.labels = values.map { jmp -> jmp.target.label }
+                        }
+                    }
+
                 else -> node
             }
 
@@ -103,19 +144,16 @@ class PolymorphicFlowTransformer(
         }
 
         for (jump in block.endpoints) {
-            val block = when (jump) {
-                is Edge.Jump -> jump.target
-                is Edge.Fallthrough -> jump.to
+            when (jump) {
+                is Edge.Jump -> process(jump.target)
+                is Edge.Fallthrough -> process(jump.to)
+
+                is Edge.Switch -> jump.values.forEach {
+                    process(it.target)
+                }
 
                 else -> continue
             }
-
-            if (visited.contains(block)) {
-                continue
-            }
-
-            visited.add(block)
-            createBlock(insns, block, visited, jumble)
         }
 
         return visited
