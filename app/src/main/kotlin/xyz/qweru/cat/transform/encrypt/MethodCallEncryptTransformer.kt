@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.LabelNode
 import org.objectweb.asm.tree.LdcInsnNode
 import org.objectweb.asm.tree.LineNumberNode
 import org.objectweb.asm.tree.MethodInsnNode
+import xyz.qweru.cat.pipeline.Pipeline
 import xyz.qweru.cat.util.asm.InsnBuilder
 import xyz.qweru.cat.util.asm.PUBLIC_STATIC
 import xyz.qweru.cat.util.asm.createArrayFromStack
@@ -44,12 +45,15 @@ private const val mhandlesLookup = $$"$$mhandles$Lookup"
  * todo:  multiple invoke method variations
  * todo:  constructor support
  */
-class MethodCallEncryptTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("MethodCallEncrypt", "Encrypt method calls", target, opts) {
-
+class MethodCallEncryptTransformer(pipeline: Pipeline) : Transformer(
+    "MethodCallEncrypt",
+    "Encrypt method calls"
+) {
     init {
+        pipeline.addPostTransformer(Post())
+    }
+
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             val parallel = createExecutorFrom(opts)
             val targets = CopyOnWriteArrayList<Method>()
@@ -97,7 +101,7 @@ class MethodCallEncryptTransformer(
 
             val poolClass = newClass(
                 poolName,
-                versionFromJar(this),
+                versionFromJar(),
                 Opcodes.ACC_PUBLIC
             ) {
                 field("map", PUBLIC_STATIC, "Ljava/util/concurrent/ConcurrentHashMap;", null)
@@ -248,11 +252,8 @@ class MethodCallEncryptTransformer(
     // Workaround for my weird remapping pipeline.
     // Todo: find a better solution
 
-    class Post(
-        target: JarContainer,
-        opts: Configuration
-    ) : Transformer("PostMCET", "Post transformer for method call encryption, required when using method renaming", target, opts) {
-        init {
+    class Post : Transformer("PostMCET", "Post transformer for method call encryption, required when using method renaming") {
+        override fun apply(target: JarContainer, opts: Configuration) {
             target.apply {
                 transformMethod(classes[poolName]!!.methods.first { it.name == "<clinit>" }) {
                     createPass()

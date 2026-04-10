@@ -12,9 +12,7 @@ import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-class ControlFlowTransformer(
-    target: JarContainer, opts: Configuration
-) : Transformer("ControlFlow", "Generic control flow obfuscation", target, opts) {
+class ControlFlowTransformer : Transformer("ControlFlow", "Generic control flow obfuscation") {
 
 //    val heavy by value("Heavy", "Heavy flow obfuscation (unstable)", false)
     var shuffle by value("Block Shuffle", "Shuffles basic blocks (unstable-ish)", false)
@@ -26,7 +24,7 @@ class ControlFlowTransformer(
     val maxLocals by value("Max Locals", "Max amount of allowed locals (per type) for junk code", 10)
     val localModifyChance by value("Local Modify Chance", "Chance of modifying a local", 0.1)
 
-    fun apply() {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {

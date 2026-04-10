@@ -16,13 +16,10 @@ import kotlin.random.Random
  * idea:
  * generate array for op numbers where every next number is previous +/-/^/&/| some number
  */
-class NumberEncryptTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("NumberEncrypt", "Encrypts numeric constants", target, opts, ) {
+class NumberEncryptTransformer : Transformer("NumberEncrypt", "Encrypts numeric constants") {
     val smallConstants by value("Small Constants", "Encrypt small constants (ICONST_*/LCONST_*)", true)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {

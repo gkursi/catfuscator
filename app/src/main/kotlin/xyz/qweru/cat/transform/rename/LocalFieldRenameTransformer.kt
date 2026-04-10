@@ -6,13 +6,10 @@ import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.collections.iterator
 
-class LocalFieldRenameTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("LocalFieldRename", "Rename local fields", target, opts) {
+class LocalFieldRenameTransformer : Transformer("LocalFieldRename", "Rename local fields") {
     private val prefix by value("Prefix", "Prefix for renamed fields", "field")
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             val parallel = createExecutorFrom(opts)
             for (entry in classes) {

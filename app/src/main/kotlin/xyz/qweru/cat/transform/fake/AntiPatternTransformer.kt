@@ -11,15 +11,12 @@ import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-class AntiPatternTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("AntiPattern", "Replace certain insns to prevent decompiler pattern matching", target, opts) {
+class AntiPatternTransformer : Transformer("AntiPattern", "Replace certain insns to prevent decompiler pattern matching") {
 
     val swap by value("Swap", "Replace swap insns", true)
     val const by value("Constant", "Replace constant insns", true)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {

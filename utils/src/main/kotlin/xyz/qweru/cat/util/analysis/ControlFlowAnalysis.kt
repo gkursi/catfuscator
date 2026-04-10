@@ -20,6 +20,13 @@ import xyz.qweru.cat.util.collection.LiteralMap
 fun analyzeCfg(insns: InsnList): FlowAnalysis {
     val blocksByLabel = Object2ObjectOpenHashMap<LabelNode, Block>()
 
+    if (insns.first !is LabelNode) {
+        insns.insertBefore(
+            insns.first,
+            LabelNode(Label())
+        )
+    }
+
     val entry = createFlow(
         insns,
         blocksByLabel,

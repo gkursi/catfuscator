@@ -21,11 +21,11 @@ import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {  }
 
-class PolymorphicFlowTransformer(
-    target: JarContainer, opts: Configuration
-) : Transformer("PolymorphicFlow", "Polymorphic flow obfuscation (unstable)", target, opts) {
-
-    init {
+class PolymorphicFlowTransformer : Transformer(
+    "PolymorphicFlow",
+    "Polymorphic flow obfuscation"
+) {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
 
         target.apply {

@@ -2,6 +2,7 @@ package xyz.qweru.cat
 
 import com.github.ajalt.clikt.core.main
 import io.github.oshai.kotlinlogging.KotlinLogging
+import xyz.qweru.cat.pipeline.Pipeline
 import xyz.qweru.cat.transform.encrypt.ArithmeticEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.MethodCallEncryptTransformer
 import xyz.qweru.cat.transform.encrypt.NoConstantTransformer
@@ -39,7 +40,7 @@ object Main {
         val jar = readJar(config)
 
         transform(jar, config)
-//        remapJar(jar, config)
+        remapJar(jar, config)
 
         logger.info { "Output: ${config.output}" }
         writeJar(jar, config)
@@ -47,36 +48,39 @@ object Main {
 
     private fun transform(jar: JarContainer, config: Configuration) {
         val timer = Timer()
+        val pipeline = Pipeline()
 
-        LineNumberTransformer(jar, config)
-//        FakeMethodTransformer(jar, config)
-//        FieldValueDefinitionTransformer(jar, config)
-//
-//        BlockAnalysisTransformer(jar, config)
-//        ExcessiveLabelTransformer(jar, config)
-        ControlFlowTransformer(jar, config).apply {
-            globalVT = true
-            shuffle = false
-            junkFlow = false
-            apply()
+        pipeline.addPostTransformer(AntiPatternTransformer())
+
+        pipeline.stage {
+            transformer(LineNumberTransformer())
+            transformer(FakeMethodTransformer())
+            transformer(FieldValueDefinitionTransformer())
+//            transformer(BlockAnalysisTransformer())
         }
-        PolymorphicFlowTransformer(jar, config)
-//        ControlFlowFlattenTransformer(jar, config)
-//
-//        StringEncryptTransformer(jar, config)
-//        NumberEncryptTransformer(jar, config)
-//        NoConstantTransformer(jar, config)
-//        MethodCallEncryptTransformer(jar, config)
-//        ArithmeticEncryptTransformer(jar, config)
-//
-//        ClassRenameTransformer(jar, config)
-//        MethodRenameTransformer(jar, config)
-//        FieldRenameTransformer(jar, config)
-//        LocalFieldRenameTransformer(jar, config)
-//
-//        MethodCallEncryptTransformer.Post(jar, config)
-//        AntiPatternTransformer(jar, config)
 
+        pipeline.stage {
+//            transformer(ExcessiveLabelTransformer())
+//            transformer(PolymorphicFlowTransformer())
+            transformer(ControlFlowFlattenTransformer())
+        }
+
+        pipeline.stage {
+            transformer(StringEncryptTransformer())
+            transformer(NumberEncryptTransformer())
+            transformer(NoConstantTransformer())
+            transformer(MethodCallEncryptTransformer(pipeline))
+            transformer(ArithmeticEncryptTransformer())
+        }
+
+        pipeline.stage {
+            transformer(ClassRenameTransformer())
+            transformer(MethodRenameTransformer())
+            transformer(FieldRenameTransformer())
+            transformer(LocalFieldRenameTransformer())
+        }
+
+        pipeline.apply(jar, config)
         logger.info { "Obfuscation took ${timer.time()}ms" }
     }
 }

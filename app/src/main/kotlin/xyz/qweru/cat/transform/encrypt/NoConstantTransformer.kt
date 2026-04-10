@@ -23,10 +23,7 @@ import kotlin.random.Random
 
 private val logger = KotlinLogging.logger {  }
 
-class NoConstantTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("ConstantHide", "Hides constants", target, opts) {
+class NoConstantTransformer : Transformer("ConstantHide", "Hides constants") {
     val hideSmallNumbers by value("StrLen Small Numbers", "Hides small numbers as String#length calls", false)
     val maxNumberLength by value("Max Number Length", "What is considered a small number", 5)
     val invisibleEncode by value("Invisible String", "Hide string length", true)
@@ -47,7 +44,7 @@ class NoConstantTransformer(
                 || encodeNumbers
                 || arrayNumbers
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes.entries) {

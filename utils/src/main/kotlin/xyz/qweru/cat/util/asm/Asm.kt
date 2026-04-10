@@ -40,8 +40,8 @@ fun transformMethod(methodNode: MethodNode, configurator: MethodTransformer.() -
 /**
  * This requires the jar to contain at least one class entry
  */
-fun versionFromJar(target: JarContainer) =
-    target.classes.entries.first().value.version
+fun JarContainer.versionFromJar() =
+    classes.entries.first().value.version
 
 class MethodTransformer(private val methodNode: MethodNode) {
     val instructions: InsnList = methodNode.instructions
@@ -65,6 +65,9 @@ class MethodTransformer(private val methodNode: MethodNode) {
     }
 }
 
+/**
+ * Todo: rework to build a list of passes first, then apply all at once
+ */
 class TransformPass(val instructions: InsnList, method: MethodNode) {
     var insns: Array<AbstractInsnNode> = instructions.toArray()
 

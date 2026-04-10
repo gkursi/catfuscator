@@ -12,15 +12,15 @@ import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-class ArithmeticEncryptTransformer(
-    target: JarContainer,
-    opts: Configuration,
-) : Transformer("ArithmeticEncrypt", "Encrypt arithmetic ops", target, opts) {
+class ArithmeticEncryptTransformer : Transformer(
+    "ArithmeticEncrypt",
+    "Encrypt arithmetic ops"
+) {
     val simple by value("Simple", "Replace addition/subtraction", true)
     val binary by value("Binary", "Replace binary insns", true)
     val heavyXor by value("Heavy Int XOR", "Enable heavy obfuscation by replacing xor insns", false)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {

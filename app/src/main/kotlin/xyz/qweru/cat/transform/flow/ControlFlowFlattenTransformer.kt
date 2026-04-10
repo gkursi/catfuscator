@@ -13,15 +13,12 @@ import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-class ControlFlowFlattenTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("ControlFlowFlatten", "Flatten control flow graphs", target, opts) {
+class ControlFlowFlattenTransformer : Transformer("ControlFlowFlatten", "Flatten control flow graphs") {
 
     val shuffle by value("Shuffle", "Shuffle case order", true)
     val onlyEmpty by value("Only Empty", "Only create labels when the stack is empty", false)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes.entries) {

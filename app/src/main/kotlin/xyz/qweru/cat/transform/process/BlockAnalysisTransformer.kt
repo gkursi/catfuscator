@@ -10,11 +10,8 @@ import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 
-class BlockAnalysisTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("BlockAnalysis", "Attempts to split blocks where possible", target, opts) {
-    init {
+class BlockAnalysisTransformer : Transformer("BlockAnalysis", "Attempts to split blocks where possible") {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {

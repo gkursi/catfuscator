@@ -14,10 +14,7 @@ import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-class StringEncryptTransformer(
-    target: JarContainer,
-    opts: Configuration,
-) : Transformer("StringEncrypt", "Encrypt strings", target, opts) {
+class StringEncryptTransformer : Transformer("StringEncrypt", "Encrypt strings") {
     val encryptConst by value("Encrypt Constants", "Encrypt string constants", true)
     val encryptConcat by value("Encrypt Concat", "Encrypt string concatenation (will slow it down)", true)
     val stringLimit by value("Class Limit", "Max strings per generated class", 10)
@@ -37,6 +34,7 @@ class StringEncryptTransformer(
         get() = "(Ljava/lang/String;II)Ljava/lang/String;"
 
     private val keyOpLen = 2
+    private var cfVersion = 0
 
     private val classPool = MaxLoadPool(stringLimit) {
         val globalKey = Random.nextInt(Int.MAX_VALUE)
@@ -44,7 +42,7 @@ class StringEncryptTransformer(
 
         val klass = newClass(
             "cat/StringPool$it",
-            versionFromJar(target),
+            cfVersion,
             Opcodes.ACC_PUBLIC
         ) {
             method(
@@ -458,10 +456,12 @@ class StringEncryptTransformer(
         return@MaxLoadPool klass
     }
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
 
         target.apply {
+            cfVersion = versionFromJar()
+
             for (node in classes.entries) {
                 if (!canTarget(node)) continue
                 val klass = node.value
@@ -474,6 +474,7 @@ class StringEncryptTransformer(
                     }
                 }
             }
+
             parallel.await()
             classPool.iterator()
                 .forEach(this::put)

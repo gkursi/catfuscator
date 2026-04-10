@@ -1,6 +1,5 @@
 package xyz.qweru.cat.util.jar
 
-import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.analysis.Analyzer
 import xyz.qweru.cat.util.hierarchy.HierarchyClassWriter
@@ -11,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class JarContainer {
     val resources: MutableSet<Resource> = ConcurrentHashMap.newKeySet()
-    val classes: MutableMap<String, ClassNode> = ConcurrentHashMap()
+    val classes = ConcurrentHashMap<String, ClassNode>()
     val hierarchy = createHierarchy(this)
     val mappings = JarMappingLookup()
 

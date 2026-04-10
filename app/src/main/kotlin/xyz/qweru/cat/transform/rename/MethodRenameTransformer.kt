@@ -8,14 +8,11 @@ import xyz.qweru.cat.util.asm.isStatic
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.collections.iterator
 
-class MethodRenameTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("MethodRename", "Rename methods", target, opts) {
+class MethodRenameTransformer : Transformer("MethodRename", "Rename methods") {
     private val prefix by value("Prefix", "Prefix for renamed methods", "method")
     private val excludeMain by value("Exclude Main", "Exclude any methods named `main` (required when used as runnable jar)", true)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             val parallel = createExecutorFrom(opts)
             for (entry in classes) {

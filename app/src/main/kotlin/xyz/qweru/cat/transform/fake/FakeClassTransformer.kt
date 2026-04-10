@@ -12,7 +12,7 @@ private val logger = KotlinLogging.logger {}
 class FakeClassTransformer(
     target: JarContainer,
     opts: Configuration
-) : Transformer("FakeClass", "Create fake classes", target, opts) {
+) : Transformer("FakeClass", "Create fake classes") {
     private val count by value("Count", "Amount of fake classes to create", 100)
     private val prefix by value("Prefix", "Prefix to use for the classes", "FakeClass")
     private val superClasses by value("Superclasses", "Possible superclasses for the fake classes",
@@ -24,7 +24,7 @@ class FakeClassTransformer(
         )
     )
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             if (superClasses.isEmpty()) {
                 logger.warn { "Setting `Superclasses` is empty, disabling transformer" }
@@ -36,6 +36,7 @@ class FakeClassTransformer(
             for (i in 0..<count) {
                 val klass = ClassNode()
                 val superCl = superClasses.random().replace('.', '/')
+
                 klass.visit(
                     version,
                     Opcodes.ACC_PUBLIC,
@@ -44,11 +45,12 @@ class FakeClassTransformer(
                     superCl,
                     arrayOf()
                 )
+
                 target.put(klass)
             }
         }
     }
 
-    private fun findCFVersion(): Int =
-        target.classes.entries.first().value.version
+    private fun JarContainer.findCFVersion(): Int =
+        classes.entries.first().value.version
 }

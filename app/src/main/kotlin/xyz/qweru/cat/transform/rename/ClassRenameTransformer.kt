@@ -5,15 +5,12 @@ import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 
-class ClassRenameTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("ClassRename", "Rename classes", target, opts) {
+class ClassRenameTransformer : Transformer("ClassRename", "Rename classes") {
     private val prefix by value("Prefix", "Renamed class prefix","class")
     private val preservePackage by value("Keep Package", "Keep original package of class", true)
     private val unicodeCrasher by value("Unicode Crasher", "Appends the null character to crash decompilers", false)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             val parallel = createExecutorFrom(opts)
             var i = 0L

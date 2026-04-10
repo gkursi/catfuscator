@@ -15,10 +15,7 @@ import xyz.qweru.cat.util.asm.transformMethod
 import xyz.qweru.cat.util.thread.createExecutorFrom
 import kotlin.random.Random
 
-class ExcessiveLabelTransformer(
-    target: JarContainer,
-    opts: Configuration,
-) : Transformer("TooManyLabels", "Adds a lot of labels, impacts file size a lot", target, opts) {
+class ExcessiveLabelTransformer : Transformer("TooManyLabels", "Adds a lot of labels, impacts file size a lot") {
     val count by value("Count", "Amount of label per label", 0)
     val secondaryCount by value("Secondary Count", "Amount of extra label per label", 0)
     val jumps by value("Jumps", "Max amount of jumps to generate in the fake labels", 0)
@@ -27,7 +24,7 @@ class ExcessiveLabelTransformer(
     val everyN by value("Every-Nth", "How often should new labels be created (every n instruction)", 2)
     val onlyEmpty by value("Only Empty", "Only create labels when the stack is empty", true)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes.entries) {

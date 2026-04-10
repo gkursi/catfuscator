@@ -10,7 +10,7 @@ import xyz.qweru.cat.util.jar.JarContainer
 
 private val logger = KotlinLogging.logger {  }
 
-abstract class Transformer(val name: String, val description: String, protected val target: JarContainer, protected val opts: Configuration) {
+abstract class Transformer(val name: String, val description: String) {
     private val _exclusions = ExcludeConfigValue(
         this,
         "Filter",
@@ -38,4 +38,9 @@ abstract class Transformer(val name: String, val description: String, protected 
 
     protected fun <T> value(name: String, description: String, default: T) =
         ConfigValue(this, name, description, default)
+
+    abstract fun apply(
+        target: JarContainer,
+        opts: Configuration
+    )
 }

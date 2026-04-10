@@ -5,12 +5,11 @@ import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 
-class SyntheticMethodTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("SyntheticMethods", "Add the synthetic and bridge flags to all methods to crash some decompilers", target, opts) {
-
-    init {
+class SyntheticMethodTransformer : Transformer(
+    "SyntheticMethods",
+    "Add the synthetic and bridge flags to all methods to crash some decompilers"
+) {
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             for (node in classes.entries) {
                 if (!canTarget(node)) continue

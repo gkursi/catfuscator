@@ -14,11 +14,11 @@ import xyz.qweru.cat.util.jar.JarContainer
 import xyz.qweru.cat.transform.Transformer
 import xyz.qweru.cat.util.thread.createExecutorFrom
 
-class FieldValueDefinitionTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("NoFieldInit", "Moves class field initialization to clinit", target, opts) {
-    init {
+class FieldValueDefinitionTransformer : Transformer(
+    "NoFieldInit",
+    "Moves class field initialization to clinit"
+) {
+    override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
         target.apply {
             for (entry in classes) {
@@ -54,6 +54,7 @@ class FieldValueDefinitionTransformer(
                     }
                 }
             }
+
             parallel.await()
         }
     }

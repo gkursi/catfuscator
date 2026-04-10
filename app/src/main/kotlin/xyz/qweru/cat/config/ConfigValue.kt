@@ -1,7 +1,6 @@
 package xyz.qweru.cat.config
 
 import xyz.qweru.cat.transform.Transformer
-import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 

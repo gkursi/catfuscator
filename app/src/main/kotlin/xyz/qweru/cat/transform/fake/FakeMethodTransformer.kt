@@ -10,15 +10,12 @@ import xyz.qweru.cat.util.thread.createExecutorFrom
 import xyz.qweru.cat.util.asm.transformClass
 import kotlin.random.Random
 
-class FakeMethodTransformer(
-    target: JarContainer,
-    opts: Configuration
-) : Transformer("CloneMethod", "Generates fake method copies", target, opts) {
+class FakeMethodTransformer : Transformer("CloneMethod", "Generates fake method copies") {
     private val prefix by value("Prefix", "Method prefix", "fakeMethod")
     private val chance by value("Chance", "Chance of a duplicate method", 0.75)
     private val count by value("Count", "Amount of duplicate methods to create", 3)
 
-    init {
+    override fun apply(target: JarContainer, opts: Configuration) {
         target.apply {
             val parallel = createExecutorFrom(opts)
             for (entry in classes) {
