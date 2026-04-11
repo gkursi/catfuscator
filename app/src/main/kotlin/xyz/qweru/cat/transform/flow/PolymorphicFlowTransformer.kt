@@ -13,6 +13,7 @@ import xyz.qweru.cat.util.analysis.Block
 import xyz.qweru.cat.util.analysis.Edge
 import xyz.qweru.cat.util.analysis.analyzeCfg
 import xyz.qweru.cat.util.analysis.forEachEdge
+import xyz.qweru.cat.util.analysis.rebuildFromGraph
 import xyz.qweru.cat.util.asm.cloneExactExcept
 import xyz.qweru.cat.util.config.Configuration
 import xyz.qweru.cat.util.jar.JarContainer
@@ -25,6 +26,10 @@ class PolymorphicFlowTransformer : Transformer(
     "PolymorphicFlow",
     "Polymorphic flow obfuscation"
 ) {
+
+    val propagateLoops by value("Expand Loops", "Expands looping graph edges", true)
+    val randomProp by value("Connect Expansion", "Allow connections from expansions back to the originals", true)
+
     override fun apply(target: JarContainer, opts: Configuration) {
         val parallel = createExecutorFrom(opts)
 
@@ -37,15 +42,19 @@ class PolymorphicFlowTransformer : Transformer(
                 val (_, klass) = entry
                 logger.info { "Parsing ${klass.name}" }
                 for (method in klass.methods) {
-//                    parallel {
+                    parallel {
                         logger.info { " - ${method.name}" }
-                        val flow = analyzeCfg(method.instructions)
+                        val flow = analyzeCfg(
+                            method.instructions,
+                            loops = true
+                        )
 
-                        propagateLoops(flow.entrypoint)
+                        if (propagateLoops) {
+                            propagateLoops(flow.entrypoint)
+                        }
 
-                        method.instructions.clear()
-                        createBlock(method.instructions, flow.entrypoint, hashSetOf(flow.entrypoint))
-//                    }
+                        method.instructions.rebuildFromGraph(flow.entrypoint)
+                    }
                 }
             }
         }
@@ -53,109 +62,58 @@ class PolymorphicFlowTransformer : Transformer(
         parallel.await()
     }
 
-    private fun propagateLoops(block: Block) =
-        block.forEachEdge { edge, target ->
-            if (edge !is Edge.Jump || !edge.loop) {
-                return@forEachEdge
-            }
+    private fun Block.randomClone(): Block =
+        if (randomProp && Random.nextBoolean()) {
+            this
+        } else {
+            this.clone()
+        }
 
-            val endpoints = target.endpoints
-                .associate {
-                    if (it !is Edge.Jump) {
-                        return@associate it to it
-                    }
+    private fun propagateLoops(block: Block) = block.forEachEdge { edge, target ->
+        if (edge !is Edge.Jump || !edge.loop) {
+            return@forEachEdge
+        }
 
-                    it to Edge.Jump(
+        val endpoints = target.endpoints
+            .associate {
+                if (it !is Edge.Jump && it !is Edge.Switch) {
+                    return@associate it to it
+                }
+
+                return@associate when (it) {
+                    is Edge.Switch -> it to Edge.Switch(
+                        it.parent,
+                        it.keys,
+                        it.values.map { jp ->
+                            Edge.Jump(
+                                target,
+                                jp.target.randomClone(),
+                                jp.op,
+                                jp.loop
+                            )
+                        }.toMutableList(),
+                        it.op
+                    )
+
+                    is Edge.Jump -> it to Edge.Jump(
                         target,
-                        it.target.clone(),
+                        it.target.randomClone(),
                         it.op,
                         it.loop
                     )
+
+                    else -> throw IllegalStateException()
                 }
-
-            edge.target = Block(
-                LabelNode(Label()),
-                target.entrypoints,
-                endpoints.values.toHashSet(),
-                target.instructions
-                    .cloneExactExcept(endpoints)
-            )
-            return
-        }
-
-    private fun createBlock(
-        insns: InsnList,
-        block: Block,
-        visited: HashSet<Block>,
-        jumble: Boolean = true
-    ): HashSet<Block> {
-        insns.add(block.label)
-
-        fun process(block: Block) {
-            if (visited.contains(block)) {
-                return
             }
 
-            visited.add(block)
-            createBlock(insns, block, visited, jumble)
-        }
+        edge.target = Block(
+            LabelNode(Label()),
+            target.entrypoints,
+            endpoints.values.toHashSet(),
+            target.instructions
+                .cloneExactExcept(endpoints)
+        )
 
-        for (node in block.instructions) {
-            val newNode = when (node) {
-                is Edge.Jump -> {
-                    JumpInsnNode(node.op, node.target.label)
-                }
-
-                is Edge.Fallthrough ->
-                    JumpInsnNode(Opcodes.GOTO, node.to.label)
-
-                is Edge.Switch ->
-                    if (node.op == Opcodes.TABLESWITCH) {
-                        TableSwitchInsnNode(
-                            node.keys.first(),
-                            node.keys.last(),
-                            node.values.last().target.label
-                        ).also {
-                            val values = node.values.toMutableList()
-                            values.removeLast() // default
-
-                            it.labels = values.map { jmp ->
-                                jmp.target.label
-                            }
-                        }
-                    } else {
-                        LookupSwitchInsnNode(
-                            node.values.last().target.label,
-                            intArrayOf(),
-                            emptyArray()
-                        ).also {
-                            val values = node.values.toMutableList()
-                            values.removeLast() // default
-
-                            it.keys = node.keys
-                            it.labels = values.map { jmp -> jmp.target.label }
-                        }
-                    }
-
-                else -> node
-            }
-
-            insns.add(newNode)
-        }
-
-        for (jump in block.endpoints) {
-            when (jump) {
-                is Edge.Jump -> process(jump.target)
-                is Edge.Fallthrough -> process(jump.to)
-
-                is Edge.Switch -> jump.values.forEach {
-                    process(it.target)
-                }
-
-                else -> continue
-            }
-        }
-
-        return visited
+        return
     }
 }

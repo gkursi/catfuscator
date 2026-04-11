@@ -25,7 +25,7 @@ import xyz.qweru.cat.util.math.XXH3
 class FrameStateAnalyzer(val verify: Boolean = false) : Iterable<Long> {
     internal lateinit var array: LongArray
     internal lateinit var height: StackSizeAnalyzer
-    internal var cuh: Array<Frame<BasicValue>?>? = null
+//    internal var cuh: Array<Frame<BasicValue>?>? = null
 
     internal val map by lazy {
         val map = Long2ObjectOpenHashMap<MutableSet<Int>>()
@@ -40,7 +40,7 @@ class FrameStateAnalyzer(val verify: Boolean = false) : Iterable<Long> {
 
     fun analyze(insns: InsnList): FrameStateAnalyzer {
         array = LongArray(insns.size()) { -1 }
-        height = StackSizeAnalyzer().apply { analyze(insns);  }
+//        height = StackSizeAnalyzer().apply { analyze(insns);  }
 
         fork(
             insns,
@@ -88,23 +88,23 @@ class FrameStateAnalyzer(val verify: Boolean = false) : Iterable<Long> {
                 array[index] = hash
             }
 
-            if (height[index] != stack.size()) {
-                IllegalStateException("Stack height mismatch at $index: ${stack.size()}/${height[index]}/${cuh?.get(index)} (${height[index -1]})"
-                        + "\nContext:\n"
-                        + "    " + node.previous?.previous?.previous?.javaClass?.simpleName + " \n"
-                        + "    " + node.previous?.previous?.javaClass?.simpleName + " \n"
-                        + "    " + node.previous?.javaClass?.simpleName + " \n"
-                        + "    " + node.javaClass.simpleName + " <<\n"
-                        + "    " + node.next?.javaClass?.simpleName + "\n"
-                        + "prev: ${node.previous?.opcode}"
-                ).apply {
-                    printStackTrace(System.out)
-                    System.out.flush()
-                    throw this
-                }
-            }
+//            if (height[index] != stack.size()) {
+//                IllegalStateException("Stack height mismatch at $index: ${stack.size()}/${height[index]}/${cuh?.get(index)} (${height[index -1]})"
+//                        + "\nContext:\n"
+//                        + "    " + node.previous?.previous?.previous?.javaClass?.simpleName + " \n"
+//                        + "    " + node.previous?.previous?.javaClass?.simpleName + " \n"
+//                        + "    " + node.previous?.javaClass?.simpleName + " \n"
+//                        + "    " + node.javaClass.simpleName + " <<\n"
+//                        + "    " + node.next?.javaClass?.simpleName + "\n"
+//                        + "prev: ${node.previous?.opcode}"
+//                ).apply {
+//                    printStackTrace(System.out)
+//                    System.out.flush()
+//                    throw this
+//                }
+//            }
 
-            println("size at $index: ${stack.size()}/${height[index]} pre op ${node.javaClass.simpleName}(${node.opcode})")
+//            println("size at $index: ${stack.size()}/${height[index]} pre op ${node.javaClass.simpleName}(${node.opcode})")
 
             if (node.isFork || node.isTerminating) {
                 break

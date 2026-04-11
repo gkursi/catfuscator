@@ -56,22 +56,22 @@ object Main {
             transformer(LineNumberTransformer())
             transformer(FakeMethodTransformer())
             transformer(FieldValueDefinitionTransformer())
-//            transformer(BlockAnalysisTransformer())
+            transformer(BlockAnalysisTransformer())
         }
 
         pipeline.stage {
 //            transformer(ExcessiveLabelTransformer())
-//            transformer(PolymorphicFlowTransformer())
+            transformer(PolymorphicFlowTransformer())
             transformer(ControlFlowFlattenTransformer())
         }
 
-        pipeline.stage {
-            transformer(StringEncryptTransformer())
-            transformer(NumberEncryptTransformer())
-            transformer(NoConstantTransformer())
-            transformer(MethodCallEncryptTransformer(pipeline))
-            transformer(ArithmeticEncryptTransformer())
-        }
+//        pipeline.stage {
+//            transformer(StringEncryptTransformer())
+//            transformer(NumberEncryptTransformer())
+//            transformer(NoConstantTransformer())
+//            transformer(MethodCallEncryptTransformer(pipeline))
+//            transformer(ArithmeticEncryptTransformer())
+//        }
 
         pipeline.stage {
             transformer(ClassRenameTransformer())

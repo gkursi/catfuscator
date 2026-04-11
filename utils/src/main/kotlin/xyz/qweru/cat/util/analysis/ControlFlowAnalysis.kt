@@ -10,14 +10,20 @@ import org.objectweb.asm.tree.JumpInsnNode
 import org.objectweb.asm.tree.LabelNode
 import org.objectweb.asm.tree.LookupSwitchInsnNode
 import org.objectweb.asm.tree.TableSwitchInsnNode
-import xyz.qweru.cat.util.asm.cloneExact
+import xyz.qweru.cat.util.asm.analyseMethodStack
 import xyz.qweru.cat.util.asm.cloneExactExcept
 import xyz.qweru.cat.util.collection.LiteralMap
 
 /**
 * Constructs a graph from an instruction list.
+ * @param loops mark loop edges
+ * @param frames set the `frame` field
 */
-fun analyzeCfg(insns: InsnList): FlowAnalysis {
+fun analyzeCfg(
+    insns: InsnList,
+    loops: Boolean = false,
+    frames: Boolean = false
+): FlowAnalysis {
     val blocksByLabel = Object2ObjectOpenHashMap<LabelNode, Block>()
 
     if (insns.first !is LabelNode) {
@@ -35,7 +41,14 @@ fun analyzeCfg(insns: InsnList): FlowAnalysis {
     )
 
     entry.entrypoints.add(Edge.MethodEntry)
-    analyzeEdge(entry)
+
+    if (loops) {
+        analyzeEdge(entry)
+    }
+
+    if (frames) {
+        analyzeFrame(insns, entry)
+    }
 
     return FlowAnalysis(
         blocksByLabel,
@@ -44,7 +57,21 @@ fun analyzeCfg(insns: InsnList): FlowAnalysis {
 }
 
 /**
- * Recursively analyze all edges reachable from the given block
+ * Set the `frame` field for all reachable blocks
+ */
+fun analyzeFrame(insns: InsnList, entry: Block) {
+    val frames = FrameStateAnalyzer()
+        .analyze(insns)
+
+    entry.forEachEdge { _, block ->
+        block.frame = frames[insns.indexOf(
+            block.label.next
+        )]
+    }
+}
+
+/**
+ * Analyze all edges reachable from the given block
  */
 fun analyzeEdge(entry: Block) = entry.forEachEdge { next, target ->
     if (next !is Edge.Jump) {
@@ -240,6 +267,86 @@ fun Block.canLeadTo(other: Block): Boolean {
     return false
 }
 
+fun InsnList.rebuildFromGraph(block: Block) {
+    clear()
+    rebuildFromGraph(this, block)
+}
+
+fun rebuildFromGraph(
+    insns: InsnList,
+    block: Block,
+    visited: HashSet<Block> = hashSetOf(),
+): HashSet<Block> {
+    visited.add(block)
+    insns.add(block.label)
+
+    fun process(block: Block) {
+        if (visited.contains(block)) {
+            return
+        }
+
+        rebuildFromGraph(insns, block, visited)
+    }
+
+    for (node in block.instructions) {
+        val newNode = when (node) {
+            is Edge.Jump -> {
+                JumpInsnNode(node.op, node.target.label)
+            }
+
+            is Edge.Fallthrough ->
+                JumpInsnNode(Opcodes.GOTO, node.to.label)
+
+            is Edge.Switch ->
+                if (node.op == Opcodes.TABLESWITCH) {
+                    TableSwitchInsnNode(
+                        node.keys.first(),
+                        node.keys.last(),
+                        node.values.last().target.label
+                    ).also {
+                        val values = node.values.toMutableList()
+                        values.removeLast() // default
+
+                        it.labels = values.map { jmp ->
+                            jmp.target.label
+                        }
+                    }
+                } else {
+                    LookupSwitchInsnNode(
+                        node.values.last().target.label,
+                        intArrayOf(),
+                        emptyArray()
+                    ).also {
+                        val values = node.values.toMutableList()
+                        values.removeLast() // default
+
+                        it.keys = node.keys
+                        it.labels = values.map { jmp -> jmp.target.label }
+                    }
+                }
+
+            else -> node
+        }
+
+        insns.add(newNode)
+    }
+
+    for (jump in block.endpoints) {
+        when (jump) {
+            is Edge.Jump -> process(jump.target)
+            is Edge.Fallthrough -> process(jump.to)
+
+            is Edge.Switch -> jump.values.forEach {
+                process(it.target)
+            }
+
+            else -> continue
+        }
+    }
+
+    return visited
+}
+
 data class FlowAnalysis(
     val blocks: Map<LabelNode, Block>,
     val entrypoint: Block
@@ -315,6 +422,11 @@ data class Block(
      * todo: maybe use for
      */
     var flowId: Int = -1
+
+    /**
+     * Stack frame hash
+     */
+    var frame: Long = 0L
 
     /**
      * Clones this block, does not create
